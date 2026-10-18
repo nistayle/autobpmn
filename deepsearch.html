@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Membedah Pain Points PT Javan Cipta Solusi — Deep Research & Draf Ide Solutif</title>
+<style>
+  :root {
+    --ink: #14181f;
+    --ink-soft: #3d4652;
+    --ink-mute: #6b7684;
+    --paper: #ffffff;
+    --paper-alt: #f6f7f9;
+    --line: #e3e6eb;
+    --accent: #1a4fd6;
+    --accent-soft: #eef3ff;
+    --accent-2: #d97706;
+    --accent-2-soft: #fff7ed;
+    --radius: 12px;
+    --maxw: 760px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--paper-alt);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.75;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ===== Top bar ===== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(255,255,255,.88);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--line);
+  }
+  .topbar-inner {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .brand {
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: -0.2px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand span { color: var(--accent); }
+  .topbar-tag {
+    font-size: 11px;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--ink-mute);
+  }
+
+  /* ===== Progress ===== */
+  .progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    z-index: 60;
+    transition: width .1s linear;
+  }
+
+  /* ===== Article shell ===== */
+  .wrap {
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 0 24px 80px;
+  }
+
+  article {
+    background: var(--paper);
+    margin-top: 32px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: 0 1px 2px rgba(20,24,31,.04), 0 12px 32px -16px rgba(20,24,31,.14);
+  }
+
+  /* ===== Header ===== */
+  .hero {
+    padding: 48px 48px 36px;
+    border-bottom: 1px solid var(--line);
+    background:
+      radial-gradient(900px 300px at 100% -20%, var(--accent-soft), transparent 70%),
+      var(--paper);
+  }
+  .kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.6px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 18px;
+  }
+  .kicker::before {
+    content: "";
+    width: 22px;
+    height: 2px;
+    background: var(--accent);
+    display: inline-block;
+  }
+
+  h1 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(30px, 5vw, 44px);
+    line-height: 1.15;
+    letter-spacing: -0.9px;
+    margin: 0 0 20px;
+    font-weight: 700;
+  }
+
+  .dek {
+    font-size: 19px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin: 0 0 28px;
+    font-family: Georgia, "Times New Roman", serif;
+  }
+
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 18px;
+    font-size: 13.5px;
+    color: var(--ink-mute);
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+  .meta strong { color: var(--ink); font-weight: 600; }
+  .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-mute); }
+
+  /* ===== Body ===== */
+  .body { padding: 40px 48px 48px; }
+
+  .body > p { margin: 0 0 22px; }
+  .body > p strong { color: var(--ink); }
+
+  .lede::first-letter {
+    float: left;
+    font-family: Georgia, serif;
+    font-size: 68px;
+    line-height: .82;
+    font-weight: 700;
+    padding: 8px 12px 0 0;
+    color: var(--accent);
+  }
+
+  /* ===== Section headings ===== */
+  h2 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(23px, 3.2vw, 29px);
+    line-height: 1.28;
+    letter-spacing: -0.5px;
+    margin: 56px 0 8px;
+    padding-top: 28px;
+    border-top: 2px solid var(--ink);
+    display: flex;
+    gap: 14px;
+    align-items: baseline;
+  }
+  h2 .num {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--accent);
+    flex: none;
+    transform: translateY(-4px);
+  }
+
+  h3 {
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 20px;
+    line-height: 1.35;
+    letter-spacing: -0.3px;
+    margin: 34px 0 10px;
+  }
+
+  h4 {
+    font-size: 15px;
+    letter-spacing: .3px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin: 0 0 8px;
+    font-weight: 800;
+  }
+
+  /* ===== Cards: problems ===== */
+  .card {
+    background: var(--paper-alt);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--ink);
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin: 20px 0;
+  }
+  .card.problem { border-left-color: #dc2626; }
+  .card h3 { margin-top: 0; }
+
+  .label {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.3px;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .label.konteks { background: #eef1f5; color: #46505f; }
+  .label.masalah { background: #fee2e2; color: #b91c1c; }
+
+  /* ===== Idea cards ===== */
+  .idea {
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    margin: 26px 0;
+    background: var(--paper);
+    box-shadow: 0 1px 2px rgba(20,24,31,.04);
+  }
+  .idea-head {
+    padding: 22px 26px 20px;
+    background: linear-gradient(135deg, #0f1c3f, #1a4fd6);
+    color: #fff;
+  }
+  .idea-head .badge {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+    background: rgba(255,255,255,.16);
+    border: 1px solid rgba(255,255,255,.28);
+    padding: 5px 11px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .idea-head h3 {
+    margin: 0 0 8px;
+    color: #fff;
+    font-size: 22px;
+  }
+  .idea-head .topic {
+    font-size: 13.5px;
+    color: rgba(255,255,255,.8);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  .idea-head .topic b { color: #fff; font-weight: 600; }
+
+  .idea-body { padding: 24px 26px 26px; }
+  .idea-body .row {
+    display: grid;
+    grid-template-columns: 132px 1fr;
+    gap: 6px 18px;
+    padding: 14px 0;
+    border-bottom: 1px dashed var(--line);
+  }
+  .idea-body .row:last-child { border-bottom: 0; padding-bottom: 0; }
+  .idea-body .row .k {
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    padding-top: 3px;
+  }
+  .idea-body .row .v { font-size: 16.5px; line-height: 1.65; color: var(--ink-soft); }
+  .idea-body .row .v strong { color: var(--ink); }
+
+  .salient {
+    margin-top: 20px;
+    padding: 16px 18px;
+    background: var(--accent-2-soft);
+    border: 1px solid #fed7aa;
+    border-radius: 10px;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .salient .k {
+    display: block;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: #b45309;
+    margin-bottom: 6px;
+  }
+
+  /* ===== Pull quote ===== */
+  blockquote {
+    margin: 44px 0;
+    padding: 4px 0 4px 26px;
+    border-left: 4px solid var(--accent);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(20px, 3vw, 25px);
+    line-height: 1.45;
+    letter-spacing: -0.4px;
+    color: var(--ink);
+  }
+  blockquote p { margin: 0; }
+
+  /* ===== Divider ===== */
+  .divider {
+    text-align: center;
+    margin: 44px 0;
+    color: var(--ink-mute);
+    letter-spacing: 12px;
+    font-size: 13px;
+  }
+
+  /* ===== Footer ===== */
+  .footnote {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--line);
+    font-size: 14px;
+    color: var(--ink-mute);
+    line-height: 1.7;
+  }
+  .footnote strong { color: var(--ink-soft); }
+
+  @media (max-width: 640px) {
+    body { font-size: 17px; }
+    .hero { padding: 32px 22px 26px; }
+    .body { padding: 28px 22px 36px; }
+    .wrap { padding: 0 14px 60px; }
+    article { margin-top: 18px; }
+    .idea-body .row { grid-template-columns: 1fr; gap: 2px; }
+    .idea-body .row .k { padding-top: 0; }
+    .card { padding: 18px 18px; }
+    .idea-head, .idea-body { padding-left: 20px; padding-right: 20px; }
+    h2 { gap: 10px; }
+  }
+
+  @media print {
+    body { background: #fff; font-size: 12pt; }
+    .topbar, .progress { display: none; }
+    article { border: 0; box-shadow: none; margin: 0; }
+    .idea-head { background: #0f1c3f !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <a class="brand" href="#">Deep<span>Research</span></a>
+    <div class="topbar-tag">ANGEL Hackathon · 2026</div>
+  </div>
+</div>
+
+<div class="wrap">
+  <article>
+
+    <header class="hero">
+      <div class="kicker">Analisis Bisnis &amp; Inovasi</div>
+      <h1>Membedah Masalah Nyata PT Javan Cipta Solusi</h1>
+      <p class="dek">
+        Inovasi yang menang dalam <em>hackathon</em> tidak hanya sekadar canggih secara teknologi,
+        tetapi harus bisa menyelesaikan masalah operasional yang menghambat skalabilitas bisnis
+        Javan itu sendiri.
+      </p>
+      <div class="meta">
+        <span><strong>Deep Research</strong> atas model bisnis PT Javan Cipta Solusi</span>
+        <span class="dot"></span>
+        <span>Fokus: AlurKerja · Odoo ERP · e-Government / B2G</span>
+        <span class="dot"></span>
+        <span>± 7 menit baca</span>
+      </div>
+    </header>
+
+    <div class="body">
+
+      <p class="lede">
+        Berdasarkan analisis mendalam terhadap model bisnis <strong>PT Javan Cipta Solusi</strong> —
+        yang berfokus pada <em>Business Process Management</em> melalui produk <strong>AlurKerja</strong>,
+        implementasi <strong>Odoo ERP</strong>, serta proyek <em>e-government</em>/B2G — kita dapat
+        membedah <strong>masalah nyata (<em>pain points</em>)</strong> yang mereka hadapi di lapangan.
+      </p>
+
+      <p>
+        Pemahaman ini penting: sebuah solusi yang baik harus berakar langsung dari pedoman
+        (juknis) ANGEL Hackathon, sekaligus menyentuh titik lemah operasional yang selama ini
+        memperlambat Javan untuk tumbuh.
+      </p>
+
+      <div class="divider">•••</div>
+
+      <!-- ============ SECTION 1 ============ -->
+      <h2><span class="num">01</span> Masalah Utama PT Javan Cipta Solusi di Lapangan</h2>
+
+      <!-- Problem A -->
+      <div class="card problem">
+        <h3>A. <em>Bottleneck</em> pada Fase Analisis Bisnis (Terlalu Banyak Waktu untuk Menerjemahkan SOP)</h3>
+        <span class="label konteks">Konteks</span>
+        <p>
+          Klien utama Javan adalah instansi pemerintah (Pemda, Kementerian) dan korporasi. Klien ini
+          memiliki SOP yang tebal, kaku, dan berbentuk dokumen naratif hukum (misal: Peraturan Daerah,
+          SK Direksi).
+        </p>
+        <span class="label masalah">Masalah</span>
+        <p style="margin-bottom:0">
+          Mengubah ratusan halaman dokumen PDF ini menjadi diagram alur kerja (BPMN) yang bisa
+          dieksekusi di platform <strong>AlurKerja</strong> membutuhkan <em>Business Analyst</em> (BA)
+          dan <em>System Analyst</em> yang bekerja berminggu-minggu secara manual. Proses ini rawan
+          misinterpretasi dan memperlambat waktu peluncuran proyek (<em>Time-to-Market</em>).
+        </p>
+      </div>
+
+      <!-- Problem B -->
+      <div class="card problem">
+        <h3>B. Data Eksekusi yang Pasif (Kurangnya <em>Process Intelligence</em>)</h3>
+        <span class="label konteks">Konteks</span>
+        <p>
+          Sistem ERP (Odoo) dan aplikasi <em>custom</em> yang dibangun Javan menghasilkan jutaan baris
+          <em>event log</em> — data histori siapa melakukan apa dan kapan.
+        </p>
+        <span class="label masalah">Masalah</span>
+        <p style="margin-bottom:0">
+          Saat ini, sistem pelaporan (<em>dashboard</em>) sebagian besar hanya bersifat deskriptif.
+          Jika sebuah dokumen perizinan mandek selama 10 hari di meja Kepala Dinas, Javan atau klien
+          harus melakukan <em>query database</em> secara manual untuk mencari tahu akar masalahnya.
+          Tidak ada sistem otomatis yang bisa memprediksi atau menemukan <em>bottleneck</em> secara
+          <em>real-time</em>.
+        </p>
+      </div>
+
+      <!-- Problem C -->
+      <div class="card problem">
+        <h3>C. Resistensi Pengguna (<em>Friction in User Adoption &amp; Execution</em>)</h3>
+        <span class="label konteks">Konteks</span>
+        <p>
+          Pengguna akhir (<em>end-user</em>) dari aplikasi buatan Javan seringkali adalah pejabat daerah
+          atau eksekutif yang sibuk dan gagap teknologi.
+        </p>
+        <span class="label masalah">Masalah</span>
+        <p style="margin-bottom:0">
+          Mereka malas membuka portal <em>web</em> yang rumit, melakukan <em>login</em>, dan mencari
+          menu hanya untuk melakukan "Approval" (Persetujuan) satu dokumen. Resistensi ini membuat
+          SLA (<em>Service Level Agreement</em>) proses bisnis sering terlewat.
+        </p>
+      </div>
+
+      <div class="divider">•••</div>
+
+      <!-- ============ SECTION 2 ============ -->
+      <h2><span class="num">02</span> Draf Ide Solutif</h2>
+
+      <p>
+        Berdasarkan tiga masalah di atas, berikut adalah draf ide purwarupa (<em>Prototype Alpha</em>)
+        yang sangat relevan untuk ditawarkan kepada Javan, lengkap dengan kaitannya dengan juknis.
+      </p>
+
+      <!-- Idea 1 -->
+      <div class="idea">
+        <div class="idea-head">
+          <span class="badge">Ide Solusi 1</span>
+          <h3>"Auto-Mapper: AI-Powered GovSOP to BPMN Engine"</h3>
+          <div class="topic">
+            <b>Korelasi Topik Juknis:</b> <em>AI-Powered SOP to Executable Business Process</em>
+          </div>
+        </div>
+        <div class="idea-body">
+          <div class="row">
+            <div class="k">Target Masalah</div>
+            <div class="v">Menyelesaikan <em>bottleneck</em> penerjemahan dokumen regulasi/SOP manual oleh tim <em>Business Analyst</em>.</div>
+          </div>
+          <div class="row">
+            <div class="k">Konsep Purwarupa</div>
+            <div class="v">
+              Sebuah sistem berbasis <em>Large Language Model</em> (LLM) + <em>Retrieval-Augmented
+              Generation</em> (RAG) khusus dokumen legal/pemerintahan. Sistem ini membaca PDF Peraturan
+              Daerah/SOP, mengekstrak aktor (<em>swimlanes</em>), langkah kerja (<em>tasks</em>), dan
+              aturan keputusan (<em>gateways</em>).
+            </div>
+          </div>
+          <div class="row">
+            <div class="k">Fitur Kunci</div>
+            <div class="v">
+              Output akhirnya bukan sekadar teks, melainkan file <code>.xml</code> standar BPMN 2.0 yang
+              bisa <strong>langsung di-import (<em>plug-and-play</em>) ke dalam engine AlurKerja milik
+              Javan</strong>.
+            </div>
+          </div>
+          <div class="salient">
+            <span class="k">Nilai Jual ke Javan</span>
+            Mengurangi waktu <em>onboarding</em> klien baru dari <strong>3 minggu menjadi 3 hari</strong>.
+          </div>
+        </div>
+      </div>
+
+      <!-- Idea 2 -->
+      <div class="idea">
+        <div class="idea-head">
+          <span class="badge">Ide Solusi 2</span>
+          <h3>"ProcessX-Ray: Predictive Bottleneck &amp; Rework Analyzer"</h3>
+          <div class="topic">
+            <b>Korelasi Topik Juknis:</b> <em>AI-Driven Process Intelligence &amp; Optimization</em>
+          </div>
+        </div>
+        <div class="idea-body">
+          <div class="row">
+            <div class="k">Target Masalah</div>
+            <div class="v">Mengubah data <em>event log</em> pasif di ERP Odoo/AlurKerja menjadi wawasan prediktif.</div>
+          </div>
+          <div class="row">
+            <div class="k">Konsep Purwarupa</div>
+            <div class="v">
+              Sebuah modul <em>Process Mining</em> cerdas. Purwarupa ini menelan (<em>ingest</em>) data log
+              standar (Timestamp, Case ID, Activity, User ID). AI akan membandingkan alur aktual dengan
+              alur standar (SOP).
+            </div>
+          </div>
+          <div class="row">
+            <div class="k">Fitur Kunci</div>
+            <div class="v">
+              Secara otomatis menghasilkan laporan <em>Root-Cause Analysis</em> (misal: "Dokumen pengadaan
+              sering mengalami <em>rework</em> 3 kali di divisi Legal karena lampiran tidak lengkap").
+              Fitur ini bisa memperingatkan administrator <em>sebelum</em> tenggat waktu SLA terlewat.
+            </div>
+          </div>
+          <div class="salient">
+            <span class="k">Nilai Jual ke Javan</span>
+            Bisa dijual sebagai fitur <em>add-on</em> premium (berlangganan) untuk klien enterprise Javan
+            yang membutuhkan audit tata kelola data.
+          </div>
+        </div>
+      </div>
+
+      <!-- Idea 3 -->
+      <div class="idea">
+        <div class="idea-head">
+          <span class="badge">Ide Solusi 3</span>
+          <h3>"Javan ExecuBot: Omnichannel Conversational Workflow"</h3>
+          <div class="topic">
+            <b>Korelasi Topik Juknis:</b> <em>Conversational AI for Business Process Execution</em>
+          </div>
+        </div>
+        <div class="idea-body">
+          <div class="row">
+            <div class="k">Target Masalah</div>
+            <div class="v">Mengatasi resistensi pejabat/eksekutif dalam menggunakan <em>dashboard</em> web yang kompleks.</div>
+          </div>
+          <div class="row">
+            <div class="k">Konsep Purwarupa</div>
+            <div class="v">
+              <em>Chatbot</em> cerdas berbasis NLP (<em>Natural Language Processing</em>) yang
+              diintegrasikan langsung dengan API platform <em>AlurKerja</em> milik Javan, serta terhubung
+              ke aplikasi pesan seperti WhatsApp/Telegram.
+            </div>
+          </div>
+          <div class="row">
+            <div class="k">Fitur Kunci</div>
+            <div class="v">
+              Pejabat cukup mengetik di WhatsApp: <em>"Berapa dokumen tata kota yang butuh TTD saya hari
+              ini?"</em>. Bot akan membalas dengan ringkasan. Pejabat lalu mengetik <em>"Approve semua
+              yang anggarannya di bawah 50 juta"</em>. Bot langsung mengeksekusi <em>API call</em> ke
+              sistem <em>backend</em> Javan.
+            </div>
+          </div>
+          <div class="salient">
+            <span class="k">Nilai Jual ke Javan</span>
+            Meningkatkan <em>user experience</em> dan tingkat adopsi (<em>adoption rate</em>) aplikasi
+            B2G Javan secara drastis, mengurangi keluhan <em>user</em> gaptek.
+          </div>
+        </div>
+      </div>
+
+      <div class="divider">•••</div>
+
+      <!-- ============ SECTION 3 ============ -->
+      <h2><span class="num">03</span> Kesimpulan Strategis untuk Tim Anda</h2>
+
+      <blockquote>
+        <p>
+          Jika Anda ingin memenangkan validasi dari Javan dalam program ini, jangan hanya menawarkan
+          "AI yang pintar".
+        </p>
+      </blockquote>
+
+      <p>
+        Tawarkanlah alat yang bisa diintegrasikan dengan <strong>AlurKerja</strong> atau
+        <strong>Odoo</strong>, karena itulah inti bisnis mereka.
+      </p>
+
+      <p>
+        Fokuskan proposal Anda pada bagaimana ide tersebut memangkas biaya operasional
+        (<em>cost reduction</em>) Javan atau membuka peluang <em>revenue stream</em> baru bagi Javan
+        saat mereka berjualan ke instansi pemerintahan.
+      </p>
+
+      <div class="footnote">
+        <strong>Catatan:</strong> Dokumen ini disusun sebagai bahan <em>deep research</em> internal tim
+        untuk penyusunan proposal ANGEL Hackathon. Seluruh analisis mengacu pada model bisnis PT Javan
+        Cipta Solusi beserta lini produk AlurKerja, Odoo ERP, dan proyek B2G.
+      </div>
+
+    </div>
+  </article>
+</div>
+
+<script>
+  (function () {
+    var bar = document.getElementById('progress');
+    function update() {
+      var h = document.documentElement;
+      var max = h.scrollHeight - h.clientHeight;
+      var pct = max > 0 ? (h.scrollTop || document.body.scrollTop) / max * 100 : 0;
+      bar.style.width = pct + '%';
+    }
+    window.addEventListener('scroll', update, { passive: true });
+    window.addEventListener('resize', update);
+    update();
+  })();
+</script>
+
+</body>
+</html>
