@@ -9,6 +9,12 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             {
+              name: 'bpmn',
+              test: /node_modules[\\/](?:bpmn-js|diagram-js)[\\/]/,
+              minSize: 0,
+              maxSize: 400 * 1024,
+            },
+            {
               name: 'vendor',
               test: /node_modules[\\/]/,
               minSize: 80 * 1024,
