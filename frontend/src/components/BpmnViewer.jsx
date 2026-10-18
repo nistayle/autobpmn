@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import BpmnNavigatedViewer from 'bpmn-js/lib/NavigatedViewer';
-import BpmnModeler from 'bpmn-js/lib/Modeler';
 import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
@@ -14,9 +13,10 @@ import {
 } from 'lucide-react';
 import Keycap from './Keycap';
 import CanvasPropertyDrawer from './CanvasPropertyDrawer';
+import LoadingState from './LoadingState';
 import WorkframeJsonViewer from './WorkframeJsonViewer';
 import { syncXmlToGraph, validateGraphLocally } from '../services/graphModel';
-import { makeBpmnXml } from '../services/demoPipeline';
+import { makeBpmnXml } from '../services/bpmnXml';
 
 const FIRST_RUN_KEY = 'autobpmn-first-run-done';
 
@@ -55,6 +55,8 @@ export default function BpmnViewer({
   const [activeDrawerElement, setActiveDrawerElement] = useState(null);
   const [editValidation, setEditValidation] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingEditor, setIsLoadingEditor] = useState(false);
+  const [BpmnModelerClass, setBpmnModelerClass] = useState(null);
   const [draftGraph, setDraftGraph] = useState(null);
   const [jsonDraft, setJsonDraft] = useState('');
   const [jsonError, setJsonError] = useState(null);
@@ -80,7 +82,7 @@ export default function BpmnViewer({
 
   // Setup either Viewer or Modeler depending on isEditMode
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || (isEditMode && !BpmnModelerClass)) return;
 
     // Destroy existing instance cleanly
     if (instanceRef.current) {
@@ -96,7 +98,7 @@ export default function BpmnViewer({
 
     if (isEditMode) {
       // Modeler mode with palette, context pad, and direct editing
-      instance = new BpmnModeler({ container: containerRef.current });
+      instance = new BpmnModelerClass({ container: containerRef.current });
       instanceRef.current = instance;
 
       const commandStack = instance.get('commandStack');
@@ -197,7 +199,7 @@ export default function BpmnViewer({
         } catch (e) {}
       }
     };
-  }, [isEditMode]);
+  }, [isEditMode, BpmnModelerClass]);
 
   // Single controlled effect to import XML into the active instance
   useEffect(() => {
@@ -235,6 +237,7 @@ export default function BpmnViewer({
       } finally {
         if (importIdRef.current === currentImportId && !isDestroyedRef.current) {
           setLoading(false);
+          if (isEditMode) setIsLoadingEditor(false);
         }
       }
     })();
@@ -384,15 +387,25 @@ export default function BpmnViewer({
   }, [xml, processName, intermediateGraph]);
 
   // Edit Mode Actions
-  const handleStartEdit = () => {
-    if (!xml) return;
+  const handleStartEdit = async () => {
+    if (!xml || isLoadingEditor) return;
+    setIsLoadingEditor(true);
+    setError(null);
     if (isWalkthroughActive && onToggleWalkthrough) {
       onToggleWalkthrough(false);
     }
-    setDraftGraph(intermediateGraph);
-    setJsonDraft(intermediateGraph ? JSON.stringify(intermediateGraph, null, 2) : '{}');
-    setJsonError(null);
-    setIsEditMode(true);
+    try {
+      const { default: Modeler } = await import('bpmn-js/lib/Modeler');
+      setBpmnModelerClass(() => Modeler);
+      setDraftGraph(intermediateGraph);
+      setJsonDraft(intermediateGraph ? JSON.stringify(intermediateGraph, null, 2) : '{}');
+      setJsonError(null);
+      setIsEditMode(true);
+    } catch (err) {
+      console.error('Load BPMN editor error:', err);
+      setError(err.message || 'Gagal memuat editor BPMN.');
+      setIsLoadingEditor(false);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -817,11 +830,12 @@ export default function BpmnViewer({
                       type="button"
                       className="toolbar-btn toolbar-btn--edit"
                       onClick={handleStartEdit}
+                      disabled={isLoadingEditor}
                       title="Ubah diagram secara visual dengan drag-and-drop (Hot-key: E)"
                       aria-label="Edit Diagram"
                     >
                       <Edit3 size={13} />
-                      <span>Edit Diagram</span>
+                      <span>{isLoadingEditor ? 'Memuat editor...' : 'Edit Diagram'}</span>
                     </button>
                   )}
 
@@ -948,16 +962,17 @@ export default function BpmnViewer({
           }}
         />
 
-        <WorkframeJsonViewer
-          graphData={isEditMode ? draftGraph || intermediateGraph : intermediateGraph}
-          processName={processName}
-          onDownloadJson={downloadJson}
-          editable={isEditMode}
-          jsonText={jsonDraft}
-          jsonError={jsonError}
-          onJsonTextChange={handleJsonTextChange}
-          hidden={viewMode !== 'json'}
-        />
+        {viewMode === 'json' && (
+          <WorkframeJsonViewer
+            graphData={isEditMode ? draftGraph || intermediateGraph : intermediateGraph}
+            processName={processName}
+            onDownloadJson={downloadJson}
+            editable={isEditMode}
+            jsonText={jsonDraft}
+            jsonError={jsonError}
+            onJsonTextChange={handleJsonTextChange}
+          />
+        )}
 
         {/* Live Canvas Property Drawer (Shown in Edit Mode on Element Click) */}
         {isEditMode && (
@@ -970,9 +985,12 @@ export default function BpmnViewer({
           />
         )}
 
-        {loading && viewMode === 'visual' && (
-          <div className="canvas-overlay" role="status" aria-live="polite" aria-label="Memuat diagram">
-            <div className="canvas-overlay__spinner" />
+        {(loading || isLoadingEditor) && viewMode === 'visual' && (
+          <div className="canvas-overlay">
+            <LoadingState
+              variant="canvas"
+              label={isLoadingEditor ? 'Menyiapkan editor BPMN...' : 'Memuat diagram...'}
+            />
           </div>
         )}
 

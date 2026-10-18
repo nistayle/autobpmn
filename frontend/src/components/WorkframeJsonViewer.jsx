@@ -14,7 +14,6 @@ export default function WorkframeJsonViewer({
   jsonText,
   jsonError = null,
   onJsonTextChange,
-  hidden = false,
 }) {
   const [copied, setCopied] = useState(false);
   const lineNumbersRef = useRef(null);
@@ -65,7 +64,6 @@ export default function WorkframeJsonViewer({
       className="workframe-json"
       role="region"
       aria-label={editable ? 'Editor Model Graf JSON' : 'Model Graf JSON'}
-      style={{ display: hidden ? 'none' : 'flex' }}
     >
       {/* ── Subheader / Meta Info Bar ── */}
       <div className="workframe-json__header">

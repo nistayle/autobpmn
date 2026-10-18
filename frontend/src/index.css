@@ -140,6 +140,7 @@ body {
    App Shell — Three-column workspace
    ══════════════════════════════════════════ */
 .app-shell {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -1249,6 +1250,17 @@ body {
 /* ══════════════════════════════════════════
    Empty State / Informative Workframe Hub
    ══════════════════════════════════════════ */
+.canvas-area__empty-state {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+  padding: 24px;
+  background: #fafafa;
+}
+
 .empty-state {
   position: absolute;
   inset: 0;
@@ -1521,6 +1533,11 @@ body {
   z-index: 10;
   background: rgba(250,250,250,0.6);
   backdrop-filter: blur(2px);
+}
+
+.canvas-overlay .loading-state--canvas {
+  width: 100%;
+  height: 100%;
 }
 
 .canvas-overlay__spinner {
@@ -5586,5 +5603,98 @@ body {
   .workframe-json__code-wrap {
     padding-right: 10px;
     padding-left: 10px;
+  }
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.loading-state__spinner {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border: 2px solid var(--gray-200);
+  border-top-color: var(--accent-600);
+  border-radius: 50%;
+  animation: loading-state-spin 700ms linear infinite;
+}
+
+.loading-state__label {
+  color: var(--gray-700);
+}
+
+.loading-state__description {
+  color: var(--gray-500);
+  font-size: 11px;
+  font-weight: 400;
+}
+
+.loading-state--startup {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-app);
+}
+
+.loading-state--startup .loading-state__spinner {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+.loading-state--workframe {
+  width: 100%;
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
+  background: var(--bg-surface);
+}
+
+.loading-state--panel {
+  width: 100%;
+  min-height: 100%;
+  flex-direction: column;
+  background: var(--bg-surface);
+}
+
+.loading-state--canvas {
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+  background: transparent;
+}
+
+.loading-state--overlay {
+  position: absolute;
+  z-index: 1000;
+  inset: 0;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(250, 250, 250, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.loading-state--overlay .loading-state__spinner {
+  width: 24px;
+  height: 24px;
+  flex-basis: 24px;
+}
+
+@keyframes loading-state-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-state__spinner {
+    animation-duration: 1.6s;
   }
 }

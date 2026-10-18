@@ -6,7 +6,7 @@ import {
   ArrowRight, ChevronDown, Link2, Unlink2
 } from 'lucide-react';
 import Keycap from './Keycap';
-import { makeBpmnXml } from '../services/demoPipeline';
+import { makeBpmnXml } from '../services/bpmnXml';
 
 function syncViewboxes(controller, sourceSide) {
   if (!controller.enabled || controller.syncing) return;

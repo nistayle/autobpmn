@@ -1,7 +1,5 @@
 // frontend/src/services/api.js
 
-import { runDemoPipeline } from './demoPipeline';
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1';
 
 /**
@@ -49,6 +47,7 @@ export async function processSopText(textContent, title = 'Dokumen SOP', forceRe
 
   if (!useReal) {
     // Mode Prototype: simulasi lokal mock JSON
+    const { runDemoPipeline } = await import('./demoPipeline');
     return runDemoPipeline();
   }
 
@@ -77,6 +76,7 @@ export async function processSopFile(file, forceReal = null) {
   const useReal = forceReal !== null ? forceReal : isRealApiMode();
 
   if (!useReal) {
+    const { runDemoPipeline } = await import('./demoPipeline');
     return runDemoPipeline();
   }
 
@@ -537,7 +537,7 @@ export function streamCopilotMessage(messages, context = {}, callbacks = {}, for
 }
 
 import { validateGraphLocally, applyLocalPatch, computeGraphDiff } from './graphModel';
-import { makeBpmnXml } from './demoPipeline';
+import { makeBpmnXml } from './bpmnXml';
 
 /**
  * Validasi struktural graf proses BPMN

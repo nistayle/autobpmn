@@ -1,12 +1,9 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import BpmnViewer from './components/BpmnViewer';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
 import SopUploader from './components/SopUploader';
 import ValidationBadge from './components/ValidationBadge';
 import Keycap from './components/Keycap';
-import AiCopilotPanel from './components/AiCopilotPanel';
-import CommandPalette from './components/CommandPalette';
 import FileTabBar from './components/FileTabBar';
-import ChangePreviewModal from './components/ChangePreviewModal';
+import LoadingState from './components/LoadingState';
 import {
   isRealApiMode,
   processSopText,
@@ -33,8 +30,13 @@ import {
   PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen,
   Search, ShieldCheck, Undo2, Redo2,
-  FolderOpen, Plus
+  FolderOpen, Plus, ArrowLeft, Sparkles, Workflow
 } from 'lucide-react';
+
+const BpmnViewer = lazy(() => import('./components/BpmnViewer'));
+const AiCopilotPanel = lazy(() => import('./components/AiCopilotPanel'));
+const CommandPalette = lazy(() => import('./components/CommandPalette'));
+const ChangePreviewModal = lazy(() => import('./components/ChangePreviewModal'));
 
 const SAMPLE_SOP = `SOP Pengadaan Perlengkapan Kantor
 1. Pemohon mengisi formulir permohonan pengadaan barang.
@@ -47,6 +49,7 @@ const SAMPLE_SOP = `SOP Pengadaan Perlengkapan Kantor
 export default function App() {
   const [isRealMode, setIsRealMode] = useState(() => isRealApiMode());
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Memproses permintaan...');
   const [errorMessage, setErrorMessage] = useState(null);
   const [selectedElement, setSelectedElement] = useState(null);
   const [sourceFile, setSourceFile] = useState(null);
@@ -208,6 +211,7 @@ export default function App() {
 
   const handleImportFile = useCallback(async (fileObj) => {
     try {
+      setLoadingMessage('Mengimpor diagram...');
       setIsLoading(true);
       setErrorMessage(null);
       const imported = await parseImportedFile(fileObj);
@@ -376,6 +380,7 @@ export default function App() {
 
   const handleProcessText = async (text, mode = 'replace') => {
     if (!text.trim()) return;
+    setLoadingMessage(mode === 'extend' ? 'Menganalisis tambahan SOP...' : 'Memproses teks SOP...');
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -405,6 +410,7 @@ export default function App() {
 
   const handleProcessFile = async (file, mode = 'replace') => {
     if (mode === 'extend') return;
+    setLoadingMessage('Memproses berkas SOP...');
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -421,6 +427,7 @@ export default function App() {
   };
 
   const handleCreateFromSopFile = async (file) => {
+    setLoadingMessage('Membuat diagram dari SOP...');
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -492,6 +499,7 @@ export default function App() {
       return;
     }
 
+    setLoadingMessage('Menerapkan perubahan ke diagram...');
     setIsLoading(true);
     setErrorMessage(null);
     try {
@@ -532,6 +540,7 @@ export default function App() {
 
   const handleTrySample = useCallback(() => {
     if (isLoading) return;
+    setLoadingMessage('Memuat contoh proses...');
     setIsLoading(true);
     setErrorMessage(null);
     processSopText(SAMPLE_SOP, 'Dokumen SOP', isRealMode)
@@ -561,7 +570,7 @@ export default function App() {
   }, []);
 
   const appContent = (
-    <div className="app-shell">
+    <div className="app-shell" aria-busy={isLoading}>
       {/* ── Top Bar ── */}
       <header className="app-header">
         <div className="app-header__brand">
@@ -693,93 +702,165 @@ export default function App() {
             isCreatingFile={isLoading}
           />
 
-          {/* BPMN Canvas & Visual Editor for Active Tab */}
-          <BpmnViewer
-            xml={activeFile?.bpmnXml || ''}
-            processName={activeFile?.processName || activeFile?.name || ''}
-            intermediateGraph={activeFile?.intermediateGraph || null}
-            highlightedNodeId={highlightedCanvasNodeId}
-            isWalkthroughActive={isWalkthroughActive}
-            onToggleWalkthrough={setIsWalkthroughActive}
-            onTrySample={handleTrySample}
-            onSelectElement={handleSelectElement}
-            onGraphUpdate={handleVisualGraphUpdate}
-            onFocusSidebar={() => {
-              setSidebarOpen(true);
-              setTimeout(() => {
-                const el = document.getElementById('sop-textarea') || document.querySelector('.sidebar textarea');
-                if (el) {
-                  el.focus();
-                  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }, 60);
-            }}
-          />
+          {activeFile?.bpmnXml ? (
+            <Suspense
+              fallback={
+                <LoadingState
+                  variant="workframe"
+                  label="Memuat kanvas BPMN..."
+                  description="Menyiapkan tampilan diagram."
+                />
+              }
+            >
+              <BpmnViewer
+                xml={activeFile.bpmnXml}
+                processName={activeFile.processName || activeFile.name || ''}
+                intermediateGraph={activeFile.intermediateGraph || null}
+                highlightedNodeId={highlightedCanvasNodeId}
+                isWalkthroughActive={isWalkthroughActive}
+                onToggleWalkthrough={setIsWalkthroughActive}
+                onTrySample={handleTrySample}
+                onSelectElement={handleSelectElement}
+                onGraphUpdate={handleVisualGraphUpdate}
+                onFocusSidebar={() => {
+                  setSidebarOpen(true);
+                  setTimeout(() => {
+                    const el = document.getElementById('sop-textarea') || document.querySelector('.sidebar textarea');
+                    if (el) {
+                      el.focus();
+                      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }, 60);
+                }}
+              />
+            </Suspense>
+          ) : (
+            <section className="canvas-area__empty-state" aria-label="Belum ada diagram BPMN">
+              <div className="empty-state__hub">
+                <div className="empty-state__header">
+                  <div className="empty-state__badge">
+                    <Workflow size={13} className="empty-state__badge-icon" />
+                    <span>Belum Ada BPMN Aktif</span>
+                  </div>
+                  <h2 className="empty-state__title">Mulai Sintesis Alur Proses BPMN 2.0</h2>
+                  <p className="empty-state__desc">
+                    Tambahkan narasi SOP atau gunakan sampel untuk membuat diagram pertama.
+                  </p>
+                  <div className="empty-state__actions">
+                    <button
+                      type="button"
+                      className="empty-state__cta-focus"
+                      onClick={() => {
+                        setSidebarOpen(true);
+                        setTimeout(() => {
+                          const el = document.getElementById('sop-textarea') || document.querySelector('.sidebar textarea');
+                          el?.focus();
+                        }, 60);
+                      }}
+                    >
+                      <ArrowLeft size={14} className="empty-state__arrow-left" />
+                      <span>Tambahkan Sumber SOP</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="empty-state__cta-sample"
+                      onClick={handleTrySample}
+                      disabled={isLoading}
+                    >
+                      <Sparkles size={14} />
+                      <span>Coba Contoh SOP</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
         </main>
 
         {/* RIGHT - AI Copilot Panel (Investigasi SOP & Analisis Kaidah BPMN) */}
         <aside className={`detail-panel${detailOpen ? '' : ' detail-panel--collapsed'}`}>
-          <AiCopilotPanel
-            key={`${activeFile?.id || 'no-file'}-${copilotSession.loaded ? 'loaded' : 'loading'}`}
-            sopText={activeFile?.sopText || ''}
-            processName={activeFile?.processName || ''}
-            selectedElement={selectedElement}
-            onDeselectElement={() => setSelectedElement(null)}
-            intermediateGraph={activeFile?.intermediateGraph || null}
-            onCitationClick={handleCitationClick}
-            onClose={() => setDetailOpen(false)}
-            isRealMode={isRealMode}
-            externalPrompt={copilotExternalPrompt}
-            initialMessages={copilotSession.fileId === activeFile?.id ? copilotSession.messages : []}
-            onMessagesChange={handleCopilotMessagesChange}
-          />
+          <Suspense
+            fallback={
+              detailOpen ? (
+                <LoadingState
+                  variant="panel"
+                  label="Memuat Copilot..."
+                  description="Menyiapkan panel analisis."
+                />
+              ) : null
+            }
+          >
+            <AiCopilotPanel
+              key={`${activeFile?.id || 'no-file'}-${copilotSession.loaded ? 'loaded' : 'loading'}`}
+              sopText={activeFile?.sopText || ''}
+              processName={activeFile?.processName || ''}
+              selectedElement={selectedElement}
+              onDeselectElement={() => setSelectedElement(null)}
+              intermediateGraph={activeFile?.intermediateGraph || null}
+              onCitationClick={handleCitationClick}
+              onClose={() => setDetailOpen(false)}
+              isRealMode={isRealMode}
+              externalPrompt={copilotExternalPrompt}
+              initialMessages={copilotSession.fileId === activeFile?.id ? copilotSession.messages : []}
+              onMessagesChange={handleCopilotMessagesChange}
+            />
+          </Suspense>
         </aside>
       </div>
 
       {/* ── Command Palette (Ctrl+K) ── */}
-      <CommandPalette
-        isOpen={cmdPaletteOpen}
-        onClose={() => setCmdPaletteOpen(false)}
-        nodes={activeFile?.intermediateGraph?.nodes || []}
-        onSelectNode={(node) => {
-          setHighlightedCanvasNodeId(node.id);
-          setSelectedElement({
-            id: node.id,
-            type: node.type || 'Element',
-            name: node.name || node.label || node.id,
-            actor: node.actor || '',
-          });
-          setDetailOpen(true);
-        }}
-        onStartWalkthrough={() => {
-          setIsWalkthroughActive(true);
-        }}
-        onAskCopilot={(prompt) => {
-          setDetailOpen(true);
-          setCopilotExternalPrompt(prompt);
-        }}
-        onExportBpmn={() => handleExport('bpmn')}
-        onExportSvg={() => handleExport('svg')}
-        onTrySample={handleTrySample}
-        onFitView={() => {
-          window.dispatchEvent(new KeyboardEvent('keydown', { key: '0', code: 'Digit0' }));
-        }}
-        onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
-        onToggleDetail={() => setDetailOpen((prev) => !prev)}
-        isRealMode={isRealMode}
-      />
+      {cmdPaletteOpen && (
+        <Suspense fallback={<LoadingState variant="overlay" label="Membuka pencarian..." />}>
+          <CommandPalette
+            isOpen={cmdPaletteOpen}
+            onClose={() => setCmdPaletteOpen(false)}
+            nodes={activeFile?.intermediateGraph?.nodes || []}
+            onSelectNode={(node) => {
+              setHighlightedCanvasNodeId(node.id);
+              setSelectedElement({
+                id: node.id,
+                type: node.type || 'Element',
+                name: node.name || node.label || node.id,
+                actor: node.actor || '',
+              });
+              setDetailOpen(true);
+            }}
+            onStartWalkthrough={() => {
+              setIsWalkthroughActive(true);
+            }}
+            onAskCopilot={(prompt) => {
+              setDetailOpen(true);
+              setCopilotExternalPrompt(prompt);
+            }}
+            onExportBpmn={() => handleExport('bpmn')}
+            onExportSvg={() => handleExport('svg')}
+            onTrySample={handleTrySample}
+            onFitView={() => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { key: '0', code: 'Digit0' }));
+            }}
+            onToggleSidebar={() => setSidebarOpen((prev) => !prev)}
+            onToggleDetail={() => setDetailOpen((prev) => !prev)}
+            isRealMode={isRealMode}
+          />
+        </Suspense>
+      )}
 
-      <ChangePreviewModal
-        isOpen={Boolean(changePreview)}
-        previewData={changePreview}
-        currentGraph={activeFile?.intermediateGraph}
-        currentXml={activeFile?.bpmnXml}
-        processName={activeFile?.processName || activeFile?.name}
-        sourceText={pendingExtension?.text}
-        onApply={handleApplyExtension}
-        onDiscard={handleDiscardExtension}
-        isLoading={isLoading}
-      />
+      {changePreview && (
+        <Suspense fallback={<LoadingState variant="overlay" label="Menyiapkan pratinjau perubahan..." />}>
+          <ChangePreviewModal
+            isOpen={Boolean(changePreview)}
+            previewData={changePreview}
+            currentGraph={activeFile?.intermediateGraph}
+            currentXml={activeFile?.bpmnXml}
+            processName={activeFile?.processName || activeFile?.name}
+            sourceText={pendingExtension?.text}
+            onApply={handleApplyExtension}
+            onDiscard={handleDiscardExtension}
+            isLoading={isLoading}
+          />
+        </Suspense>
+      )}
+      {isLoading && <LoadingState variant="overlay" label={loadingMessage} />}
     </div>
   );
 

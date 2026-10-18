@@ -2,7 +2,7 @@
  * AutoBPMN File Management & Multi-tab Storage Service
  */
 
-import { makeBpmnXml } from './demoPipeline';
+import { makeBpmnXml } from './bpmnXml';
 import { syncXmlToGraph, validateGraphLocally } from './graphModel';
 
 const STORAGE_KEY = 'autobpmn_tabs_v2';

@@ -6,7 +6,13 @@
     <title>AutoBPMN</title>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div role="status" aria-live="polite" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#fafafa;color:#52525b;font:500 13px Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
+        <span aria-hidden="true" style="width:24px;height:24px;border:3px solid #e4e4e7;border-top-color:#0284c7;border-radius:50%;animation:autobpmn-spin .8s linear infinite"></span>
+        <span>Menyiapkan AutoBPMN...</span>
+      </div>
+      <style>@keyframes autobpmn-spin{to{transform:rotate(360deg)}}</style>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
