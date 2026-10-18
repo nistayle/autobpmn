@@ -223,40 +223,38 @@ export function triggerFileDownload(content, mimeType, filename) {
 }
 
 /**
- * Muat riwayat tabs dari LocalStorage
+ * Muat daftar tab dan pilihan aktif dari satu snapshot LocalStorage.
  */
-export function loadPersistedFiles() {
+export function loadPersistedWorkspace() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
+    const rawFiles = localStorage.getItem(STORAGE_KEY);
+    const parsedFiles = rawFiles ? JSON.parse(rawFiles) : [];
+    return {
+      files: Array.isArray(parsedFiles) ? parsedFiles : [],
+      activeFileId: localStorage.getItem(ACTIVE_TAB_KEY) || null,
+    };
   } catch (e) {
-    console.warn('Gagal memuat persisted files:', e);
+    console.warn('Gagal memuat persisted workspace:', e);
+    return { files: [], activeFileId: null };
   }
-  return null;
 }
 
 /**
- * Simpan daftar berkas ke LocalStorage
+ * Simpan daftar berkas tanpa menulis ulang saat hanya tab aktif berubah.
  */
-export function persistFiles(files, activeFileId) {
+export function persistFiles(files) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-    if (activeFileId) {
-      localStorage.setItem(ACTIVE_TAB_KEY, activeFileId);
-    }
   } catch (e) {
     console.warn('Gagal menyimpan persisted files:', e);
   }
 }
 
-export function loadPersistedActiveTabId() {
+export function persistActiveTabId(activeFileId) {
+  if (!activeFileId) return;
   try {
-    return localStorage.getItem(ACTIVE_TAB_KEY) || null;
+    localStorage.setItem(ACTIVE_TAB_KEY, activeFileId);
   } catch (e) {
-    return null;
+    console.warn('Gagal menyimpan tab aktif:', e);
   }
 }

@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './index.css';
 import SopUploader from './components/SopUploader';
 import ValidationBadge from './components/ValidationBadge';
@@ -17,9 +17,9 @@ import {
   createFileFromSynthesis,
   parseImportedFile,
   triggerFileDownload,
-  loadPersistedFiles,
+  loadPersistedWorkspace,
   persistFiles,
-  loadPersistedActiveTabId,
+  persistActiveTabId,
   loadPersistedSopSource,
   loadPersistedCopilotChat,
   persistCopilotChat,
@@ -59,26 +59,40 @@ export default function App() {
   const [pendingExtension, setPendingExtension] = useState(null);
 
   // ── Multi-Tab File Management State ──
-  const [files, setFiles] = useState(() => {
-    const saved = loadPersistedFiles();
-    if (saved && Array.isArray(saved)) return saved;
-    return [];
-  });
-
+  const [persistedWorkspace] = useState(() => loadPersistedWorkspace());
+  const [files, setFiles] = useState(() => persistedWorkspace.files);
   const [activeFileId, setActiveFileId] = useState(() => {
-    const savedActive = loadPersistedActiveTabId();
-    const savedFiles = loadPersistedFiles();
-    if (savedActive && savedFiles?.some((f) => f.id === savedActive)) {
-      return savedActive;
+    if (
+      persistedWorkspace.activeFileId &&
+      persistedWorkspace.files.some((file) => file.id === persistedWorkspace.activeFileId)
+    ) {
+      return persistedWorkspace.activeFileId;
     }
-    return savedFiles?.[0]?.id || '';
+    return persistedWorkspace.files[0]?.id || '';
   });
+  const persistedFilesRef = useRef(files);
+  const persistedActiveFileIdRef = useRef(persistedWorkspace.activeFileId);
 
   // Ensure activeFile matches activeFileId or null if no files
   const activeFile = useMemo(() => {
     if (!files || files.length === 0) return null;
     return files.find((f) => f.id === activeFileId) || files[0] || null;
   }, [files, activeFileId]);
+
+  useEffect(() => {
+    if (persistedFilesRef.current === files) return;
+    persistFiles(files);
+    persistedFilesRef.current = files;
+  }, [files]);
+
+  useEffect(() => {
+    if (persistedActiveFileIdRef.current === activeFileId) return;
+    if (activeFileId) {
+      persistActiveTabId(activeFileId);
+    }
+    persistedActiveFileIdRef.current = activeFileId;
+  }, [activeFileId]);
+
 
   useEffect(() => {
     let isCurrent = true;
@@ -123,11 +137,6 @@ export default function App() {
       });
     return () => { isCurrent = false; };
   }, [activeFile?.id]);
-
-  // Persist files whenever they change (can be empty array)
-  useEffect(() => {
-    persistFiles(files, activeFileId);
-  }, [files, activeFileId]);
 
   // Citation highlight state (from AI Copilot → SopUploader)
   const [highlightedCitation, setHighlightedCitation] = useState(null);
