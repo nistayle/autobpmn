@@ -14,11 +14,11 @@ import {
 import Keycap from './Keycap';
 import CanvasPropertyDrawer from './CanvasPropertyDrawer';
 import LoadingState from './LoadingState';
-import WorkframeJsonViewer from './WorkframeJsonViewer';
 import { syncXmlToGraph, validateGraphLocally } from '../services/graphModel';
 import { makeBpmnXml } from '../services/bpmnXml';
 
 const FIRST_RUN_KEY = 'autobpmn-first-run-done';
+const WorkframeJsonViewer = React.lazy(() => import('./WorkframeJsonViewer'));
 
 export default function BpmnViewer({
   xml,
@@ -963,15 +963,25 @@ export default function BpmnViewer({
         />
 
         {viewMode === 'json' && (
-          <WorkframeJsonViewer
-            graphData={isEditMode ? draftGraph || intermediateGraph : intermediateGraph}
-            processName={processName}
-            onDownloadJson={downloadJson}
-            editable={isEditMode}
-            jsonText={jsonDraft}
-            jsonError={jsonError}
-            onJsonTextChange={handleJsonTextChange}
-          />
+          <React.Suspense
+            fallback={
+              <LoadingState
+                variant="workframe"
+                label="Memuat tampilan JSON..."
+                description="Menyiapkan editor model graf."
+              />
+            }
+          >
+            <WorkframeJsonViewer
+              graphData={isEditMode ? draftGraph || intermediateGraph : intermediateGraph}
+              processName={processName}
+              onDownloadJson={downloadJson}
+              editable={isEditMode}
+              jsonText={jsonDraft}
+              jsonError={jsonError}
+              onJsonTextChange={handleJsonTextChange}
+            />
+          </React.Suspense>
         )}
 
         {/* Live Canvas Property Drawer (Shown in Edit Mode on Element Click) */}

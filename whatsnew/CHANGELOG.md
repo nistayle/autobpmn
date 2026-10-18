@@ -4,6 +4,7 @@ Seluruh riwayat perubahan, pembaruan fitur, dan perbaikan bug proyek AutoBPMN te
 
 | Versi | Tanggal | Sorotan Pembaruan | Berkas Detail |
 | :--- | :--- | :--- | :--- |
+| **v1.5.3** | 18 Okt 2026 | **JSON Viewer Terpisah**: Chunk viewer/editor JSON dimuat hanya saat mode JSON dibuka, dengan loading state kontekstual | [v1.5.3.md](./v1.5.3.md) |
 | **v1.5.2** | 18 Okt 2026 | **Copilot Sesuai Kebutuhan**: Menunda pemuatan panel Copilot sampai tersedia SOP, diagram, riwayat percakapan, atau prompt analisis | [v1.5.2.md](./v1.5.2.md) |
 | **v1.5.1** | 18 Okt 2026 | **Pemuatan Lebih Ringan & Loading States**: Viewer BPMN ditunda saat workspace kosong, tampilan JSON hanya dirender saat dibuka, serta pemisahan chunk fitur dan indikator loading | [v1.5.1.md](./v1.5.1.md) |
 | **v1.5.0** | 17 Okt 2026 | **File Management & Workframe Studio**: VS Code style tab bar, toggle tampilan Visual/JSON pada kanvas, unifikasi menu ekspor (.bpmn, .json, .svg), drag-and-drop file, dan Visual BPMN Modeler | [v1.5.0.md](./v1.5.0.md) |
