@@ -1585,6 +1585,37 @@ body {
   margin-right: calc(var(--detail-width) * -1);
 }
 
+.copilot-prerequisite {
+  display: flex;
+  height: 100%;
+  min-height: 180px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: var(--gray-500);
+  text-align: center;
+}
+
+.copilot-prerequisite > svg {
+  color: var(--accent-500);
+}
+
+.copilot-prerequisite h2 {
+  margin: 0;
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.copilot-prerequisite p {
+  max-width: 220px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .detail-panel__header {
   display: flex;
   align-items: center;

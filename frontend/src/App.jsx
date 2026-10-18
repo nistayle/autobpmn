@@ -140,6 +140,12 @@ export default function App() {
   // Panel visibility
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [detailOpen, setDetailOpen] = useState(true);
+  const hasCopilotContext = Boolean(
+    activeFile?.sopText?.trim() ||
+    activeFile?.intermediateGraph?.nodes?.length ||
+    (copilotSession.fileId === activeFile?.id && copilotSession.messages.length > 0) ||
+    copilotExternalPrompt
+  );
 
   // ── Tab Management Actions ──
   const handleSelectTab = useCallback((fileId) => {
@@ -779,32 +785,40 @@ export default function App() {
 
         {/* RIGHT - AI Copilot Panel (Investigasi SOP & Analisis Kaidah BPMN) */}
         <aside className={`detail-panel${detailOpen ? '' : ' detail-panel--collapsed'}`}>
-          <Suspense
-            fallback={
-              detailOpen ? (
-                <LoadingState
-                  variant="panel"
-                  label="Memuat Copilot..."
-                  description="Menyiapkan panel analisis."
-                />
-              ) : null
-            }
-          >
-            <AiCopilotPanel
-              key={`${activeFile?.id || 'no-file'}-${copilotSession.loaded ? 'loaded' : 'loading'}`}
-              sopText={activeFile?.sopText || ''}
-              processName={activeFile?.processName || ''}
-              selectedElement={selectedElement}
-              onDeselectElement={() => setSelectedElement(null)}
-              intermediateGraph={activeFile?.intermediateGraph || null}
-              onCitationClick={handleCitationClick}
-              onClose={() => setDetailOpen(false)}
-              isRealMode={isRealMode}
-              externalPrompt={copilotExternalPrompt}
-              initialMessages={copilotSession.fileId === activeFile?.id ? copilotSession.messages : []}
-              onMessagesChange={handleCopilotMessagesChange}
-            />
-          </Suspense>
+          {hasCopilotContext ? (
+            <Suspense
+              fallback={
+                detailOpen ? (
+                  <LoadingState
+                    variant="panel"
+                    label="Memuat Copilot..."
+                    description="Menyiapkan panel analisis."
+                  />
+                ) : null
+              }
+            >
+              <AiCopilotPanel
+                key={`${activeFile?.id || 'no-file'}-${copilotSession.loaded ? 'loaded' : 'loading'}`}
+                sopText={activeFile?.sopText || ''}
+                processName={activeFile?.processName || ''}
+                selectedElement={selectedElement}
+                onDeselectElement={() => setSelectedElement(null)}
+                intermediateGraph={activeFile?.intermediateGraph || null}
+                onCitationClick={handleCitationClick}
+                onClose={() => setDetailOpen(false)}
+                isRealMode={isRealMode}
+                externalPrompt={copilotExternalPrompt}
+                initialMessages={copilotSession.fileId === activeFile?.id ? copilotSession.messages : []}
+                onMessagesChange={handleCopilotMessagesChange}
+              />
+            </Suspense>
+          ) : (
+            <div className="copilot-prerequisite" role="status">
+              <Sparkles size={20} aria-hidden="true" />
+              <h2>Copilot siap saat konteks tersedia</h2>
+              <p>Tambahkan SOP atau buka diagram proses untuk memulai analisis.</p>
+            </div>
+          )}
         </aside>
       </div>
 

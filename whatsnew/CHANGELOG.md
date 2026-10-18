@@ -4,6 +4,7 @@ Seluruh riwayat perubahan, pembaruan fitur, dan perbaikan bug proyek AutoBPMN te
 
 | Versi | Tanggal | Sorotan Pembaruan | Berkas Detail |
 | :--- | :--- | :--- | :--- |
+| **v1.5.2** | 18 Okt 2026 | **Copilot Sesuai Kebutuhan**: Menunda pemuatan panel Copilot sampai tersedia SOP, diagram, riwayat percakapan, atau prompt analisis | [v1.5.2.md](./v1.5.2.md) |
 | **v1.5.1** | 18 Okt 2026 | **Pemuatan Lebih Ringan & Loading States**: Viewer BPMN ditunda saat workspace kosong, tampilan JSON hanya dirender saat dibuka, serta pemisahan chunk fitur dan indikator loading | [v1.5.1.md](./v1.5.1.md) |
 | **v1.5.0** | 17 Okt 2026 | **File Management & Workframe Studio**: VS Code style tab bar, toggle tampilan Visual/JSON pada kanvas, unifikasi menu ekspor (.bpmn, .json, .svg), drag-and-drop file, dan Visual BPMN Modeler | [v1.5.0.md](./v1.5.0.md) |
 | **v1.4.0** | 17 Okt 2026 | **AI Copilot & Overdrive Studio**: Grounded AI Copilot, streaming real-time, validasi sitasi verbatim, Command Palette (`Ctrl+K`), Walkthrough Player alur proses, bidirectional canvas highlighter, dan 100% Impeccable Design Quality | [v1.4.0.md](./v1.4.0.md) |
