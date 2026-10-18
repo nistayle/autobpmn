@@ -64,3 +64,7 @@ class PipelineResponse(BaseModel):
         ...,
         description="Berkas format BPMN 2.0 XML standar yang siap dieksekusi",
     )
+    source_text: Optional[str] = Field(
+        default=None,
+        description="Teks sumber SOP yang diekstrak untuk disimpan bersama file dan digunakan Copilot",
+    )

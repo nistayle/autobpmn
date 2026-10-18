@@ -1,6 +1,17 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.v1.pipeline import router as pipeline_router
+
+frontend_origins = [
+    origin.strip()
+    for origin in os.getenv(
+        "FRONTEND_ORIGINS",
+        "http://localhost:5173,http://127.0.0.1:5173",
+    ).split(",")
+    if origin.strip()
+]
 
 app = FastAPI(
     title="AutoBPMN Core Engine API",
@@ -11,8 +22,7 @@ app = FastAPI(
 # Konfigurasi CORS agar frontend (Vite/React/Vue) dapat mengakses API
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Sesuaikan dengan port domain frontend saat deployment
-    allow_credentials=True,
+    allow_origins=frontend_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
