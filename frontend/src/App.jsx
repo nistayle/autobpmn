@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo } from 'react';
+import './index.css';
 import SopUploader from './components/SopUploader';
 import ValidationBadge from './components/ValidationBadge';
 import Keycap from './components/Keycap';
