@@ -118,22 +118,22 @@ export async function checkServerHealth() {
 export const QUICK_PROMPTS = [
   {
     id: 'ambiguity',
-    label: '🔍 Cek Celah & Ambiguitas',
+    label: 'Cek Celah & Ambiguitas',
     prompt: 'Apakah ada celah, ambiguitas, batas SLA yang hilang, atau kondisi tanpa penanganan dalam SOP ini?',
   },
   {
     id: 'raci',
-    label: '👥 Ringkas Peran & RACI',
+    label: 'Ringkas Peran & RACI',
     prompt: 'Ringkas peran (RACI) setiap aktor dan tanggung jawabnya menurut SOP.',
   },
   {
     id: 'rejection',
-    label: '↩️ Analisis Alur Penolakan',
+    label: 'Analisis Alur Penolakan',
     prompt: 'Jelaskan alur penolakan dokumen, pengembalian berkas, dan eskalasi persetujuan.',
   },
   {
     id: 'optimization',
-    label: '⚡ Sarankan Optimasi Alur',
+    label: 'Sarankan Optimasi Alur',
     prompt: 'Berikan rekomendasi simplifikasi atau otomatisasi langkah kerja untuk Business Analyst.',
   },
 ];

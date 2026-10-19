@@ -81,6 +81,20 @@ export default function FileTabBar({
     }
   };
 
+  const handleTabKeyDown = (event, index) => {
+    let nextIndex;
+    if (event.key === 'ArrowRight') nextIndex = (index + 1) % files.length;
+    else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + files.length) % files.length;
+    else if (event.key === 'Home') nextIndex = 0;
+    else if (event.key === 'End') nextIndex = files.length - 1;
+    else return;
+
+    event.preventDefault();
+    const nextTab = tabListRef.current?.querySelectorAll('.vscode-tab')[nextIndex];
+    nextTab?.focus();
+    if (files[nextIndex]) onSelectTab(files[nextIndex].id);
+  };
+
   const handleFileInputChange = (e) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
@@ -103,9 +117,12 @@ export default function FileTabBar({
     if (trigger && tabbar) {
       const triggerRect = trigger.getBoundingClientRect();
       const tabbarRect = tabbar.getBoundingClientRect();
+      const menuWidth = Math.min(232, window.innerWidth - 24);
+      const preferredLeft = triggerRect.right - tabbarRect.left + 4;
+      const maxLeft = Math.max(8, tabbarRect.width - menuWidth - 8);
       setNewFileMenuPosition({
         top: Math.max(0, triggerRect.top - tabbarRect.top - 5),
-        left: triggerRect.right - tabbarRect.left + 4,
+        left: Math.min(Math.max(8, preferredLeft), maxLeft),
       });
     }
     setNewFileMenuOpen(true);
@@ -151,99 +168,106 @@ export default function FileTabBar({
 
   return (
     <div
+      id="file-history"
       className={`vscode-tabbar ${isDragOver ? 'vscode-tabbar--dragover' : ''}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
       onMouseLeave={() => setNewFileMenuOpen(false)}
-      role="tablist"
-      aria-label="Daftar berkas BPMN terbuka"
     >
-      {/* Scrollable Tabs Container */}
-      <div
-        className="vscode-tabbar__tabs"
-        ref={tabListRef}
-        onScroll={() => {
-          if (newFileMenuOpen) showNewFileMenu();
-        }}
-      >
-        {files.map((file) => {
-          const isActive = file.id === activeFileId;
-          const isEditing = file.id === editingTabId;
-
-          return (
-            <div
-              key={file.id}
-              role="tab"
-              aria-selected={isActive}
-              tabIndex={isActive ? 0 : -1}
-              className={`vscode-tab ${isActive ? 'vscode-tab--active' : ''} ${
-                file.isDirty ? 'vscode-tab--dirty' : ''
-              }`}
-              onClick={() => onSelectTab(file.id)}
-              onDoubleClick={(e) => handleStartRename(e, file)}
-              title={`${file.name}${file.isDirty ? ' (Belum disimpan)' : ''} - Klik ganda untuk ganti nama`}
-            >
-              {/* File Icon */}
-              <FileCode2 size={13} className="vscode-tab__icon" />
-
-              {/* Title / Inline Rename */}
-              {isEditing ? (
-                <input
-                  ref={renameInputRef}
-                  type="text"
-                  className="vscode-tab__rename-input"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onBlur={handleFinishRename}
-                  onKeyDown={handleRenameKeyDown}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              ) : (
-                <span className="vscode-tab__title">{file.name}</span>
-              )}
-
-              {/* Dirty Indicator (Dot) or Close Button */}
-              <div className="vscode-tab__controls">
-                {file.isDirty && !isEditing && (
-                  <span className="vscode-tab__dirty-dot" title="Berkas telah dimodifikasi" />
-                )}
-                <button
-                  type="button"
-                  className="vscode-tab__close-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onCloseTab(file.id);
-                  }}
-                  title="Tutup berkas (Ctrl+W)"
-                  aria-label={`Tutup ${file.name}`}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Add New Tab Button */}
-        <button
-          ref={addFileButtonRef}
-          type="button"
-          className="vscode-tabbar__add-btn"
-          onMouseEnter={showNewFileMenu}
-          onFocus={showNewFileMenu}
-          onClick={showNewFileMenu}
-          aria-expanded={newFileMenuOpen}
-          aria-haspopup="menu"
-          title="Tambah file"
-          aria-label="Tampilkan pilihan file baru"
+      <div className="vscode-tabbar__file-section">
+        <span className="vscode-tabbar__section-label">BERKAS TERBUKA</span>
+        <div
+          className="vscode-tabbar__tabs"
+          ref={tabListRef}
+          role="group"
+          aria-label="Daftar berkas BPMN terbuka"
+          onScroll={() => {
+            if (newFileMenuOpen) showNewFileMenu();
+          }}
         >
-          <Plus size={14} />
-        </button>
+          {files.map((file, index) => {
+            const isActive = file.id === activeFileId;
+            const isEditing = file.id === editingTabId;
+
+            return (
+              <div
+                key={file.id}
+                className={`vscode-tab-entry${isActive ? ' vscode-tab-entry--active' : ''}`}
+                role="presentation"
+              >
+                {isEditing ? (
+                  <input
+                    ref={renameInputRef}
+                    type="text"
+                    className="vscode-tab__rename-input"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={handleFinishRename}
+                    onKeyDown={handleRenameKeyDown}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    aria-pressed={isActive}
+                    tabIndex={0}
+                    aria-label={`${file.name}${file.isDirty ? ', perubahan belum disimpan' : ''}${isActive ? ', aktif' : ''}`}
+                    className={`vscode-tab${isActive ? ' vscode-tab--active' : ''}`}
+                    onClick={() => onSelectTab(file.id)}
+                    onDoubleClick={(e) => handleStartRename(e, file)}
+                    onKeyDown={(event) => handleTabKeyDown(event, index)}
+                    title={`${file.name}${file.isDirty ? ' · Belum disimpan' : ''} · Klik ganda untuk ganti nama`}
+                  >
+                    <FileCode2 size={13} className="vscode-tab__icon" aria-hidden="true" />
+                    <span className="vscode-tab__title">{file.name}</span>
+                    {file.isDirty && (
+                      <span
+                        className="vscode-tab__dirty-dot"
+                        aria-hidden="true"
+                        title="Perubahan belum disimpan"
+                      />
+                    )}
+                  </button>
+                )}
+
+                {!isEditing && (
+                  <button
+                    type="button"
+                    className="vscode-tab__close-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCloseTab(file.id);
+                    }}
+                    title="Tutup berkas (Ctrl+W)"
+                    aria-label={`Tutup ${file.name}`}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          <button
+            ref={addFileButtonRef}
+            type="button"
+            className="vscode-tabbar__add-btn"
+            onMouseEnter={showNewFileMenu}
+            onFocus={showNewFileMenu}
+            onClick={showNewFileMenu}
+            aria-expanded={newFileMenuOpen}
+            aria-haspopup="menu"
+            title="Tambah file"
+            aria-label="Tampilkan pilihan file baru"
+          >
+            <Plus size={15} />
+          </button>
+        </div>
       </div>
 
-      {/* Tab Bar Action Bar (Import & Export) */}
-      <div className="vscode-tabbar__actions">
+      <div className="vscode-tabbar__actions" role="group" aria-label="Aksi file">
+        <span className="vscode-tabbar__section-label">AKSI FILE</span>
         {/* Hidden File Input */}
         <input
           ref={fileInputRef}

@@ -4,6 +4,7 @@ Seluruh riwayat perubahan, pembaruan fitur, dan perbaikan bug proyek AutoBPMN te
 
 | Versi | Tanggal | Sorotan Pembaruan | Berkas Detail |
 | :--- | :--- | :--- | :--- |
+| **v1.5.8** | 18 Okt 2026 | **Notion-Inspired Review Studio**: Tema gelap, workspace tiga kolom, pipeline sumber, statistik BPMN, dock kanvas, dan panel mobile; entrance welcome bertransisi halus | [v1.5.8.md](./v1.5.8.md) |
 | **v1.5.7** | 18 Okt 2026 | **Persistensi Tab Lebih Ringan**: Snapshot workspace dibaca sekali; daftar file tidak diserialisasi ulang saat hanya tab aktif berganti | [v1.5.7.md](./v1.5.7.md) |
 | **v1.5.6** | 18 Okt 2026 | **Gaya BPMN Sesuai Kebutuhan**: Stylesheet diagram dan font ikon BPMN dimuat hanya saat kanvas BPMN dibuka | [v1.5.6.md](./v1.5.6.md) |
 | **v1.5.5** | 18 Okt 2026 | **Font Connection Lebih Awal**: Mulai koneksi dan unduh stylesheet font dari HTML awal, tanpa menahan render workspace | [v1.5.5.md](./v1.5.5.md) |

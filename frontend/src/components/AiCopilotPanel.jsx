@@ -198,7 +198,7 @@ export default function AiCopilotPanel({
                   ...msg,
                   content:
                     msg.content ||
-                    `⚠️ Gagal memproses permintaan: ${err.message || 'Layanan tidak tersedia.'}`,
+                    `Gagal memproses permintaan: ${err.message || 'Layanan tidak tersedia.'}`,
                   isPartial: false,
                   confidence: 'low',
                   warnings: ['Koneksi ke penyedia AI terputus atau quota habis.'],
@@ -386,7 +386,7 @@ export default function AiCopilotPanel({
                               title={`Klik untuk menyorot teks pada SOP: "${cit.quote}"`}
                             >
                               <span className="copilot-citation-chip__badge">
-                                {cit.step ? `Langkah ${cit.step}` : 'SOP'}
+                                {cit.step ? `L${cit.step}` : 'SOP'}
                               </span>
                               <span className="copilot-citation-chip__quote">
                                 {cit.quote.length > 45 ? `${cit.quote.slice(0, 45)}...` : cit.quote}
@@ -414,6 +414,13 @@ export default function AiCopilotPanel({
                               className="copilot-followup-pill"
                               onClick={() => handleSendMessage(fu)}
                             >
+                              <span className="copilot-followup-pill__tag">
+                                {/otomasi|otomatis|integrasi/i.test(fu)
+                                  ? 'OTOMASI'
+                                  : /gateway|keputusan|persetujuan|cabang/i.test(fu)
+                                    ? 'GATEWAY'
+                                    : 'ANALISIS'}
+                              </span>
                               {fu}
                             </button>
                           ))}

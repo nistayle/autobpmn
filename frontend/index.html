@@ -4,33 +4,103 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AutoBPMN</title>
+    <script>
+      try {
+        document.documentElement.dataset.theme =
+          localStorage.getItem('autobpmn-theme') === 'light' ? 'light' : 'dark';
+      } catch {
+        document.documentElement.dataset.theme = 'dark';
+      }
+    </script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --studio-bg: #0a0a0a;
+        --studio-ink: #f2f2ee;
+        --studio-line: #262626;
+        --studio-muted: #8c8c86;
+        --studio-accent: #c6ff3d;
+      }
+      :root[data-theme='light'] {
+        color-scheme: light;
+        --studio-bg: #fafaf7;
+        --studio-ink: #0a0a0a;
+        --studio-line: #e5e5df;
+        --studio-muted: #63635e;
+        --studio-accent: #c6ff3d;
+      }
+      html,
+      body,
+      #root {
+        min-height: 100%;
+        margin: 0;
+        background: var(--studio-bg);
+        color: var(--studio-ink);
+      }
+      .preboot-screen {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: var(--studio-bg);
+        color: var(--studio-muted);
+        font: 500 13px 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      .preboot-loader {
+        position: relative;
+        width: 32px;
+        height: 2px;
+        background: var(--studio-line);
+      }
+      .preboot-loader::after {
+        position: absolute;
+        top: -3px;
+        left: 0;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--studio-accent);
+        content: '';
+        animation: loading-state-flow 900ms ease-in-out infinite alternate;
+      }
+      @keyframes loading-state-flow {
+        to { transform: translateX(24px); }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .preboot-loader::after {
+          animation: none;
+          transform: translateX(12px);
+        }
+      }
+    </style>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="preload"
       as="style"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&amp;family=DM+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
     />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap"
+      href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&amp;family=DM+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link
         rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap"
+        href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;600;700&amp;family=DM+Sans:wght@400;500;600;700&amp;family=IBM+Plex+Mono:wght@400;500;600&amp;display=swap"
       />
     </noscript>
   </head>
   <body>
     <div id="root">
-      <div role="status" aria-live="polite" style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#fafafa;color:#52525b;font:500 13px Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif">
-        <span aria-hidden="true" style="width:24px;height:24px;border:3px solid #e4e4e7;border-top-color:#0284c7;border-radius:50%;animation:autobpmn-spin .8s linear infinite"></span>
+      <div class="preboot-screen" role="status" aria-live="polite">
+        <span class="preboot-loader" aria-hidden="true"></span>
         <span>Menyiapkan AutoBPMN...</span>
       </div>
-      <style>@keyframes autobpmn-spin{to{transform:rotate(360deg)}}</style>
     </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

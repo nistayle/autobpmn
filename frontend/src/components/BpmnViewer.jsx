@@ -4,12 +4,12 @@ import 'bpmn-js/dist/assets/diagram-js.css';
 import 'bpmn-js/dist/assets/bpmn-js.css';
 import 'bpmn-js/dist/assets/bpmn-font/css/bpmn.css';
 import {
-  ZoomIn, ZoomOut, Maximize2, Download,
+  ZoomIn, ZoomOut, Maximize2, Expand, Minimize2, Download,
   Sparkles, Workflow, ScanLine, ChevronDown,
   FileCode2, FileJson, Image, Play, Pause, ChevronLeft,
   ChevronRight, X, Layers, Edit3, Undo2, Redo2,
   Check, AlertTriangle, ShieldCheck, ArrowLeft,
-  Command, Sliders, FileText, CornerDownLeft
+  Command, Sliders, FileText, CornerDownLeft, MoreHorizontal
 } from 'lucide-react';
 import Keycap from './Keycap';
 import CanvasPropertyDrawer from './CanvasPropertyDrawer';
@@ -26,11 +26,16 @@ export default function BpmnViewer({
   onTrySample,
   onSelectElement,
   intermediateGraph = null,
+  isDirty = false,
+  onSave,
+  onStatsChange,
   highlightedNodeId = null,
   isWalkthroughActive = false,
   onToggleWalkthrough,
   onGraphUpdate,
   onFocusSidebar,
+  isCanvasFullscreen = false,
+  onToggleCanvasFullscreen,
 }) {
   const containerRef = useRef(null);
   const instanceRef = useRef(null);
@@ -214,6 +219,20 @@ export default function BpmnViewer({
         await instanceRef.current.importXML(xml);
         if (importIdRef.current !== currentImportId || isDestroyedRef.current) return;
 
+        const elementRegistry = instanceRef.current.get('elementRegistry');
+        const diagramElements = elementRegistry.getAll().filter((element) =>
+          element.businessObject && element.businessObject.$type
+        );
+        const stats = {
+          steps: diagramElements.filter(({ businessObject }) =>
+            /Task|Activity/.test(businessObject.$type)
+          ).length,
+          gateways: diagramElements.filter(({ businessObject }) =>
+            /Gateway$/.test(businessObject.$type)
+          ).length,
+        };
+        onStatsChange?.(stats);
+
         try {
           instanceRef.current.get('canvas').zoom('fit-viewport');
         } catch (e) {}
@@ -241,7 +260,7 @@ export default function BpmnViewer({
         }
       }
     })();
-  }, [xml, isEditMode]);
+  }, [xml, isEditMode, onStatsChange]);
 
   // Handle external node highlight (Bidirectional Traceability)
   useEffect(() => {
@@ -695,30 +714,32 @@ export default function BpmnViewer({
   }, [exportOpen]);
 
   return (
-    <>
+    <section className="diagram-stage" aria-label="Diagram BPMN">
       {/* ── Dynamic Toolbar ── */}
-      <div className="canvas-toolbar">
+      <div className="canvas-toolbar" data-motion-item>
         <div className="canvas-toolbar__left">
           {/* Segmented View Mode Toggle: Visual vs JSON */}
-          <div className="canvas-view-toggle" role="group" aria-label="Mode Tampilan Workframe">
-            <button
-              type="button"
-              className={`canvas-view-toggle__btn ${viewMode === 'visual' ? 'canvas-view-toggle__btn--active' : ''}`}
-              onClick={() => handleViewModeChange('visual')}
-              title="Tampilkan diagram alur proses visual"
-            >
-              <Workflow size={13} />
-              <span>Visual</span>
-            </button>
-            <button
-              type="button"
-              className={`canvas-view-toggle__btn ${viewMode === 'json' ? 'canvas-view-toggle__btn--active' : ''}`}
-              onClick={() => handleViewModeChange('json')}
-              title="Tampilkan model graf JSON terstruktur"
-            >
-              <FileJson size={13} />
-              <span>JSON</span>
-            </button>
+          <div className="canvas-toolbar__group canvas-toolbar__group--view">
+            <div className="canvas-view-toggle" role="group" aria-label="Mode tampilan">
+              <button
+                type="button"
+                className={`canvas-view-toggle__btn ${viewMode === 'visual' ? 'canvas-view-toggle__btn--active' : ''}`}
+                onClick={() => handleViewModeChange('visual')}
+                title="Tampilkan diagram alur proses visual"
+              >
+                <Workflow size={13} />
+                <span>Visual</span>
+              </button>
+              <button
+                type="button"
+                className={`canvas-view-toggle__btn ${viewMode === 'json' ? 'canvas-view-toggle__btn--active' : ''}`}
+                onClick={() => handleViewModeChange('json')}
+                title="Tampilkan model graf JSON terstruktur"
+              >
+                <FileJson size={13} />
+                <span>JSON</span>
+              </button>
+            </div>
           </div>
 
           {/* Edit Mode Badge & Controls */}
@@ -780,25 +801,40 @@ export default function BpmnViewer({
             </div>
           ) : (
             walkthroughNodes.length > 0 && (
-              <button
-                type="button"
-                className={`toolbar-btn toolbar-btn--walkthrough${
-                  isWalkthroughActive ? ' toolbar-btn--active' : ''
-                }`}
-                onClick={() => onToggleWalkthrough && onToggleWalkthrough(!isWalkthroughActive)}
-                title="Simulasi alur proses langkah demi langkah (Hot-key: W)"
-                aria-label="Simulasi alur proses"
-              >
-                <Play size={13} fill={isWalkthroughActive ? 'currentColor' : 'none'} />
-                <span>{isWalkthroughActive ? 'Berhenti' : 'Simulasi Alur'}</span>
-              </button>
+              <div className="canvas-toolbar__group canvas-toolbar__group--flow" role="group" aria-label="Simulasi alur">
+                <button
+                  type="button"
+                  className={`toolbar-btn toolbar-btn--walkthrough${
+                    isWalkthroughActive ? ' toolbar-btn--active' : ''
+                  }`}
+                  onClick={() => onToggleWalkthrough && onToggleWalkthrough(!isWalkthroughActive)}
+                  title="Simulasi alur proses langkah demi langkah (Hot-key: W)"
+                  aria-label="Simulasi alur proses"
+                >
+                  <Play size={13} fill={isWalkthroughActive ? 'currentColor' : 'none'} />
+                  <span>{isWalkthroughActive ? 'Berhenti' : 'Simulasi Alur'}</span>
+                </button>
+              </div>
             )
           )}
         </div>
 
         <div className="canvas-toolbar__right">
+          <div className="canvas-toolbar__group canvas-toolbar__group--workspace" role="group" aria-label="Tata letak workspace">
+            <button
+              type="button"
+              className={`toolbar-btn toolbar-btn--focus${isCanvasFullscreen ? ' toolbar-btn--active' : ''}`}
+              onClick={onToggleCanvasFullscreen}
+              title={isCanvasFullscreen ? 'Kembalikan workspace (Esc)' : 'Fokus ke kanvas dan sembunyikan panel (Esc untuk keluar)'}
+              aria-label={isCanvasFullscreen ? 'Kembalikan workspace' : 'Fokus ke kanvas'}
+              aria-pressed={isCanvasFullscreen}
+            >
+              {isCanvasFullscreen ? <Minimize2 size={14} /> : <Expand size={14} />}
+              <span>{isCanvasFullscreen ? 'Keluar fokus' : 'Fokus'}</span>
+            </button>
+          </div>
           {isEditMode ? (
-            <div className="edit-mode-actions">
+            <div className="canvas-toolbar__group canvas-toolbar__group--edit edit-mode-actions" role="group" aria-label="Sunting diagram">
               <button
                 type="button"
                 className="toolbar-btn"
@@ -816,30 +852,31 @@ export default function BpmnViewer({
                 title="Simpan perubahan JSON atau diagram ke model (Ctrl+S)"
               >
                 <Check size={13} />
-                <span>{isSaving ? 'Menyimpan...' : 'Simpan Perubahan'}</span>
+                <span>{isSaving ? 'Menyimpan...' : 'Simpan'}</span>
               </button>
             </div>
           ) : (
             <>
+              {xml && (
+                <div className="canvas-toolbar__group canvas-toolbar__group--edit" role="group" aria-label="Sunting diagram">
+                  <button
+                    type="button"
+                    className="toolbar-btn toolbar-btn--edit"
+                    onClick={handleStartEdit}
+                    disabled={isLoadingEditor}
+                    title="Ubah diagram visual atau JSON (Hot-key: E)"
+                    aria-label="Edit Diagram"
+                  >
+                    <Edit3 size={13} />
+                    <span>{isLoadingEditor ? 'Memuat editor...' : 'Edit'}</span>
+                  </button>
+                </div>
+              )}
+
               {/* Visual Mode Specific Tools */}
               {viewMode === 'visual' && (
                 <>
-                  {/* Edit Diagram Button */}
-                  {xml && (
-                    <button
-                      type="button"
-                      className="toolbar-btn toolbar-btn--edit"
-                      onClick={handleStartEdit}
-                      disabled={isLoadingEditor}
-                      title="Ubah diagram secara visual dengan drag-and-drop (Hot-key: E)"
-                      aria-label="Edit Diagram"
-                    >
-                      <Edit3 size={13} />
-                      <span>{isLoadingEditor ? 'Memuat editor...' : 'Edit Diagram'}</span>
-                    </button>
-                  )}
-
-                  <div className="toolbar-button-group">
+                  <div className="toolbar-button-group canvas-toolbar__zoom-group" role="group" aria-label="Kontrol zoom kanvas">
                     <button
                       className="toolbar-btn toolbar-btn--icon"
                       onClick={() => zoom(0.2)}
@@ -859,7 +896,7 @@ export default function BpmnViewer({
                     <button
                       className="toolbar-btn toolbar-btn--icon"
                       onClick={fitView}
-                      title="Sesuaikan diagram ke layar penuh (Hot-key: 0)"
+                      title="Sesuaikan diagram ke area kanvas (Hot-key: 0)"
                       aria-label="Sesuaikan ke layar"
                     >
                       <Maximize2 size={14} />
@@ -870,80 +907,93 @@ export default function BpmnViewer({
                 </>
               )}
 
-              {/* Unified Export Dropdown (Tersedia baik di mode Visual maupun JSON) */}
-              <div className="toolbar-dropdown" ref={exportDropdownRef}>
+              <div className="canvas-toolbar__group canvas-toolbar__group--save" role="group" aria-label="Simpan dan ekspor">
                 <button
-                  className={`toolbar-btn toolbar-btn--primary${exportOpen ? ' toolbar-btn--active' : ''}`}
-                  onClick={() => setExportOpen((prev) => !prev)}
-                  disabled={!xml && !intermediateGraph}
-                  title="Unduh diagram alur proses (.bpmn, .json, atau .svg)"
-                  aria-label="Ekspor diagram proses"
-                  aria-expanded={exportOpen}
-                  aria-haspopup="true"
+                  type="button"
+                  className="toolbar-btn toolbar-btn--primary"
+                  onClick={onSave || downloadXml}
+                  disabled={!xml}
+                  title={`Unduh diagram BPMN (.bpmn)${isDirty ? ' · Ada perubahan belum disimpan' : ''} (Ctrl+S)`}
+                  aria-label="Simpan atau unduh diagram BPMN"
                 >
                   <Download size={13} />
-                  <span>Ekspor</span>
-                  <ChevronDown
-                    size={12}
-                    style={{
-                      transition: 'transform 0.15s ease',
-                      transform: exportOpen ? 'rotate(180deg)' : 'none',
-                      marginLeft: 1,
-                    }}
-                  />
+                  <span>Simpan</span>
                 </button>
 
-                {exportOpen && (
-                  <div className="toolbar-dropdown__menu" role="menu">
-                    <button
-                      type="button"
-                      className="toolbar-dropdown__item"
-                      role="menuitem"
-                      onClick={() => {
-                        downloadXml();
-                        setExportOpen(false);
+                {/* Unified Export Dropdown (Tersedia baik di mode Visual maupun JSON) */}
+                <div className="toolbar-dropdown" ref={exportDropdownRef}>
+                  <button
+                    className={`toolbar-btn${exportOpen ? ' toolbar-btn--active' : ''}`}
+                    onClick={() => setExportOpen((prev) => !prev)}
+                    disabled={!xml && !intermediateGraph}
+                    title="Unduh diagram alur proses (.bpmn, .json, atau .svg)"
+                    aria-label="Ekspor diagram proses"
+                    aria-expanded={exportOpen}
+                    aria-haspopup="true"
+                  >
+                    <MoreHorizontal size={15} />
+                    <ChevronDown
+                      size={12}
+                      style={{
+                        transition: 'transform 0.15s ease',
+                        transform: exportOpen ? 'rotate(180deg)' : 'none',
+                        marginLeft: 1,
                       }}
-                      title="Unduh berkas model standar BPMN 2.0 XML (Alt+B)"
-                    >
-                      <span className="toolbar-dropdown__item-left">
-                        <FileCode2 className="toolbar-dropdown__item-icon" />
-                        <span>Format BPMN 2.0 (.bpmn)</span>
-                      </span>
-                    </button>
+                    />
+                  </button>
 
-                    <button
-                      type="button"
-                      className="toolbar-dropdown__item"
-                      role="menuitem"
-                      onClick={() => {
-                        downloadJson();
-                        setExportOpen(false);
-                      }}
-                      title="Unduh model graf terstruktur AutoBPMN JSON"
-                    >
-                      <span className="toolbar-dropdown__item-left">
-                        <FileJson className="toolbar-dropdown__item-icon" />
-                        <span>Model AutoBPMN JSON (.json)</span>
-                      </span>
-                    </button>
+                  {exportOpen && (
+                    <div className="toolbar-dropdown__menu" role="menu">
+                      <button
+                        type="button"
+                        className="toolbar-dropdown__item"
+                        role="menuitem"
+                        onClick={() => {
+                          downloadXml();
+                          setExportOpen(false);
+                        }}
+                        title="Unduh berkas model standar BPMN 2.0 XML (Alt+B)"
+                      >
+                        <span className="toolbar-dropdown__item-left">
+                          <FileCode2 className="toolbar-dropdown__item-icon" />
+                          <span>Format BPMN 2.0 (.bpmn)</span>
+                        </span>
+                      </button>
 
-                    <button
-                      type="button"
-                      className="toolbar-dropdown__item"
-                      role="menuitem"
-                      onClick={() => {
-                        downloadSvg();
-                        setExportOpen(false);
-                      }}
-                      title="Unduh gambar vektor berkualitas tinggi (.svg)"
-                    >
-                      <span className="toolbar-dropdown__item-left">
-                        <Image className="toolbar-dropdown__item-icon" />
-                        <span>Vektor Grafis (.svg)</span>
-                      </span>
-                    </button>
-                  </div>
-                )}
+                      <button
+                        type="button"
+                        className="toolbar-dropdown__item"
+                        role="menuitem"
+                        onClick={() => {
+                          downloadJson();
+                          setExportOpen(false);
+                        }}
+                        title="Unduh model graf terstruktur AutoBPMN JSON"
+                      >
+                        <span className="toolbar-dropdown__item-left">
+                          <FileJson className="toolbar-dropdown__item-icon" />
+                          <span>Model AutoBPMN JSON (.json)</span>
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        className="toolbar-dropdown__item"
+                        role="menuitem"
+                        onClick={() => {
+                          downloadSvg();
+                          setExportOpen(false);
+                        }}
+                        title="Unduh gambar vektor berkualitas tinggi (.svg)"
+                      >
+                        <span className="toolbar-dropdown__item-left">
+                          <Image className="toolbar-dropdown__item-icon" />
+                          <span>Vektor Grafis (.svg)</span>
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           )}
@@ -1192,7 +1242,7 @@ export default function BpmnViewer({
           </div>
         )}
       </div>
-    </>
+    </section>
   );
 }
 

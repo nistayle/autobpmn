@@ -1,5 +1,7 @@
 import React, { Suspense, lazy, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import './index.css';
+import './studio.css';
+import { animateWorkspaceEntrance } from './motion';
 import SopUploader from './components/SopUploader';
 import ValidationBadge from './components/ValidationBadge';
 import Keycap from './components/Keycap';
@@ -31,7 +33,7 @@ import {
   PanelLeftClose, PanelLeftOpen,
   PanelRightClose, PanelRightOpen,
   Search, ShieldCheck, Undo2, Redo2,
-  FolderOpen, Plus, ArrowLeft, Sparkles, Workflow
+  FolderOpen, Plus, ArrowLeft, Sparkles, Workflow, Moon, Sun
 } from 'lucide-react';
 
 const BpmnViewer = lazy(() => import('./components/BpmnViewer'));
@@ -47,11 +49,14 @@ const SAMPLE_SOP = `SOP Pengadaan Perlengkapan Kantor
 5. Vendor terpilih mengirimkan barang pesanan ke kantor.
 6. Pemohon menerima barang dan menandatangani berita acara penerimaan.`;
 
-export default function App() {
+export default function App({ onReady }) {
+  const [theme, setTheme] = useState(readSavedTheme);
   const [isRealMode, setIsRealMode] = useState(() => isRealApiMode());
   const [isLoading, setIsLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Memproses permintaan...');
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
+  const [diagramStats, setDiagramStats] = useState({ steps: 0, gateways: 0 });
   const [selectedElement, setSelectedElement] = useState(null);
   const [sourceFile, setSourceFile] = useState(null);
   const [copilotSession, setCopilotSession] = useState({ fileId: '', messages: [], loaded: false });
@@ -72,6 +77,7 @@ export default function App() {
   });
   const persistedFilesRef = useRef(files);
   const persistedActiveFileIdRef = useRef(persistedWorkspace.activeFileId);
+  const successTimerRef = useRef(null);
 
   // Ensure activeFile matches activeFileId or null if no files
   const activeFile = useMemo(() => {
@@ -92,6 +98,10 @@ export default function App() {
     }
     persistedActiveFileIdRef.current = activeFileId;
   }, [activeFileId]);
+
+  useEffect(() => {
+    setDiagramStats({ steps: 0, gateways: 0 });
+  }, [activeFile?.id]);
 
 
   useEffect(() => {
@@ -148,14 +158,56 @@ export default function App() {
   const [copilotExternalPrompt, setCopilotExternalPrompt] = useState(null);
 
   // Panel visibility
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [detailOpen, setDetailOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [isCanvasFullscreen, setIsCanvasFullscreen] = useState(false);
+  const [hasEnteredWorkspace, setHasEnteredWorkspace] = useState(false);
   const hasCopilotContext = Boolean(
     activeFile?.sopText?.trim() ||
     activeFile?.intermediateGraph?.nodes?.length ||
     (copilotSession.fileId === activeFile?.id && copilotSession.messages.length > 0) ||
     copilotExternalPrompt
   );
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      window.localStorage.setItem('autobpmn-theme', theme);
+    } catch (error) {
+      console.warn('Unable to persist theme preference:', error);
+    }
+  }, [theme]);
+
+  useEffect(() => () => window.clearTimeout(successTimerRef.current), []);
+
+  useEffect(() => {
+    const isCompactLayout = window.matchMedia('(max-width: 900px)').matches;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || isCompactLayout) {
+      setHasEnteredWorkspace(true);
+      setSidebarOpen(!isCompactLayout);
+      setDetailOpen(!isCompactLayout);
+      onReady?.();
+      return undefined;
+    }
+
+    let detailTimer;
+    const entryFrame = window.requestAnimationFrame(() => {
+      setHasEnteredWorkspace(true);
+      setSidebarOpen(true);
+      onReady?.();
+      detailTimer = window.setTimeout(() => setDetailOpen(true), 90);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(entryFrame);
+      window.clearTimeout(detailTimer);
+    };
+  }, [onReady]);
+
+  useEffect(() => {
+    if (!hasEnteredWorkspace) return undefined;
+    return animateWorkspaceEntrance();
+  }, [hasEnteredWorkspace]);
 
   // ── Tab Management Actions ──
   const handleSelectTab = useCallback((fileId) => {
@@ -297,6 +349,9 @@ export default function App() {
   useEffect(() => {
     const handleGlobalShortcuts = (e) => {
       if (e.key === 'Escape' || e.code === 'Escape') {
+        if (isCanvasFullscreen) {
+          setIsCanvasFullscreen(false);
+        }
         setSelectedElement(null);
         return;
       }
@@ -341,7 +396,7 @@ export default function App() {
 
     window.addEventListener('keydown', handleGlobalShortcuts, true);
     return () => window.removeEventListener('keydown', handleGlobalShortcuts, true);
-  }, [activeFileId, handleCloseTab, handleExport]);
+  }, [activeFileId, handleCloseTab, handleExport, isCanvasFullscreen]);
 
   // Monitor URL changes (browser back/forward & pushState)
   useEffect(() => {
@@ -392,6 +447,9 @@ export default function App() {
     setActiveFileId(targetFile.id);
     setSelectedElement(null);
     setErrorMessage(null);
+    setSuccessMessage('Diagram siap ditinjau.');
+    window.clearTimeout(successTimerRef.current);
+    successTimerRef.current = window.setTimeout(() => setSuccessMessage(null), 3200);
   };
 
   const handleProcessText = async (text, mode = 'replace') => {
@@ -572,6 +630,10 @@ export default function App() {
     }
   }, []);
 
+  const handleDiagramStatsChange = useCallback((stats) => {
+    setDiagramStats(stats);
+  }, []);
+
   const handleCitationClick = useCallback((citation) => {
     setHighlightedCitation(citation);
     if (citation?.node_id) {
@@ -585,19 +647,31 @@ export default function App() {
     }, 8000);
   }, []);
 
+  // UX laws: Hick reveals one source mode at a time; Fitts keeps Save near the canvas; Miller groups related controls.
+  // Jakob uses familiar tabs, Proximity/Common Region group actions, Von Restorff reserves lime for Save, and Tesler hides JSON behind its tab.
+  // Aesthetic-Usability guides the calm shell; Postel preserves forgiving import paths; Doherty uses loading veils; Peak-End confirms synthesis; Serial Position prioritizes source entry and Save.
   const appContent = (
-    <div className="app-shell" aria-busy={isLoading}>
+    <div className={`app-shell${hasEnteredWorkspace ? ' app-shell--entered' : ''}${isCanvasFullscreen ? ' app-shell--canvas-fullscreen' : ''}`} data-theme={theme} aria-busy={isLoading}>
       {/* ── Top Bar ── */}
-      <header className="app-header">
+      <header className="app-header" data-motion-item>
         <div className="app-header__brand">
           <button
             className="toggle-panel-btn"
             onClick={() => setSidebarOpen(!sidebarOpen)}
             title={sidebarOpen ? 'Tutup sidebar dokumen (Hot-key: [)' : 'Buka sidebar dokumen (Hot-key: [)'}
             aria-label={sidebarOpen ? 'Tutup sidebar' : 'Buka sidebar'}
+            aria-expanded={sidebarOpen}
           >
             {sidebarOpen ? <PanelLeftClose size={15} /> : <PanelLeftOpen size={15} />}
           </button>
+          <div className="app-logo-mark" aria-hidden="true">
+            <svg viewBox="0 0 28 20" focusable="false">
+              <circle cx="3" cy="10" r="2.5" />
+              <path d="M5.5 10h6.5m0 0V4m0 6v6m0-12h5m-5 12h5" />
+              <rect x="18" y="1.5" width="8" height="5" rx="1.5" />
+              <path d="M18 13.5 22 18l4-4.5z" />
+            </svg>
+          </div>
           <div className="app-header__title">AutoBPMN</div>
           {activeFile && (
             <>
@@ -622,24 +696,56 @@ export default function App() {
         </div>
 
         <div className="app-header__actions">
-          <div className="app-header__save-status">
+          <div className={`mode-chip${isRealMode ? ' mode-chip--live' : ''}`}>
+            <span className="mode-chip__state" aria-hidden="true" />
+            <span>{isRealMode ? 'Live' : 'Simulasi'}</span>
+            <button
+              type="button"
+              className="mode-chip__switch"
+              onClick={() => switchMode(!isRealMode)}
+              title={isRealMode ? 'Buka mode simulasi lokal' : 'Buka prototype asli di /demo'}
+              aria-label={isRealMode ? 'Buka mode simulasi lokal' : 'Buka prototype asli'}
+            >
+              {isRealMode ? 'Mode lokal' : 'Prototype asli'}
+              <ArrowLeft size={12} aria-hidden="true" />
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="theme-toggle"
+            onClick={() => setTheme((current) => current === 'dark' ? 'light' : 'dark')}
+            aria-label={theme === 'dark' ? 'Gunakan tema terang' : 'Gunakan tema gelap'}
+            title={theme === 'dark' ? 'Tema terang' : 'Tema gelap'}
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+
+          <div
+            className="app-header__save-status"
+            role="status"
+            aria-live="polite"
+            title={activeFile?.isDirty ? 'Perubahan lokal belum disimpan ke file.' : undefined}
+          >
             <span
-              className="app-header__save-dot"
-              style={{
-                background: isLoading
-                  ? 'var(--warning-500)'
-                  : activeFile?.bpmnXml
-                  ? 'var(--success-600)'
-                  : 'var(--gray-400)',
-              }}
+              className={`app-header__save-dot ${
+                isLoading
+                  ? 'app-header__save-dot--busy'
+                  : activeFile?.isDirty
+                    ? 'app-header__save-dot--dirty'
+                    : activeFile?.bpmnXml
+                      ? 'app-header__save-dot--saved'
+                      : 'app-header__save-dot--ready'
+              }`}
+              aria-hidden="true"
             />
             <span>
               {isLoading
                 ? 'Memproses...'
                 : activeFile?.isDirty
-                ? 'Dimodifikasi'
+                ? 'Belum disimpan'
                 : activeFile?.bpmnXml
-                ? (isRealMode ? 'Live API' : 'Simulasi')
+                ? 'Tersimpan'
                 : 'Siap'}
             </span>
           </div>
@@ -649,6 +755,7 @@ export default function App() {
             onClick={() => setDetailOpen(!detailOpen)}
             title={detailOpen ? 'Tutup panel Copilot (Hot-key: ])' : 'Buka panel Copilot (Hot-key: ])'}
             aria-label={detailOpen ? 'Tutup panel Copilot' : 'Buka panel Copilot'}
+            aria-expanded={detailOpen}
           >
             {detailOpen ? <PanelRightClose size={15} /> : <PanelRightOpen size={15} />}
           </button>
@@ -657,8 +764,20 @@ export default function App() {
 
       {/* ── Three-column body ── */}
       <div className="app-body">
+        {(sidebarOpen || detailOpen) && (
+          <button
+            type="button"
+            className="workspace-scrim"
+            onClick={() => {
+              setSidebarOpen(false);
+              setDetailOpen(false);
+            }}
+            aria-label="Tutup panel workspace"
+          />
+        )}
+
         {/* LEFT SIDEBAR */}
-        <aside className={`sidebar${sidebarOpen ? '' : ' sidebar--collapsed'}`}>
+        <aside id="source-panel" className={`sidebar${sidebarOpen ? '' : ' sidebar--collapsed'}`} data-motion-item>
           <div className="sidebar__header">
             <div className="sidebar__title">
               {activeFile ? `Sumber SOP${activeFile.name ? ` · ${activeFile.name}` : ''}` : 'Tambahkan Sumber SOP'}
@@ -704,7 +823,33 @@ export default function App() {
         </aside>
 
         {/* CENTER — VS Code Style Tabs & BPMN Canvas */}
-        <main className="canvas-area">
+        <main id="diagram-stage" className="canvas-area">
+          <header className="stage-heading" data-motion-item>
+            <div className="stage-heading__title">
+              <span className="stage-heading__eyebrow">FLOW / MODEL REVIEW</span>
+              <h1>{activeFile?.processName || activeFile?.name || 'SOP ke BPMN'}</h1>
+              <p>Model proses yang dapat ditinjau dan diedit.</p>
+            </div>
+            <div className="stage-stats" aria-label="Ringkasan diagram">
+              <div className="stage-stat">
+                <strong><AnimatedCount value={diagramStats.steps} /></strong>
+                <span>Langkah</span>
+              </div>
+              <div className="stage-stat">
+                <strong><AnimatedCount value={diagramStats.gateways} /></strong>
+                <span>Gateway</span>
+              </div>
+              <div className={`stage-stat stage-stat--status${activeFile?.validation?.is_valid ? ' stage-stat--valid' : ''}`}>
+                <span className="stage-stat__status-dot" aria-hidden="true" />
+                <span>
+                  {activeFile?.validation
+                    ? activeFile.validation.is_valid ? 'Valid' : 'Perlu tinjauan'
+                    : activeFile?.isDirty ? 'Belum disimpan' : 'Draft'}
+                </span>
+              </div>
+            </div>
+          </header>
+
           {/* File Tab Bar (VS Code Tabs) */}
           <FileTabBar
             files={files}
@@ -732,6 +877,11 @@ export default function App() {
                 xml={activeFile.bpmnXml}
                 processName={activeFile.processName || activeFile.name || ''}
                 intermediateGraph={activeFile.intermediateGraph || null}
+                isDirty={Boolean(activeFile.isDirty)}
+                onSave={() => handleExport('bpmn')}
+                onStatsChange={handleDiagramStatsChange}
+                isCanvasFullscreen={isCanvasFullscreen}
+                onToggleCanvasFullscreen={() => setIsCanvasFullscreen((current) => !current)}
                 highlightedNodeId={highlightedCanvasNodeId}
                 isWalkthroughActive={isWalkthroughActive}
                 onToggleWalkthrough={setIsWalkthroughActive}
@@ -794,7 +944,7 @@ export default function App() {
         </main>
 
         {/* RIGHT - AI Copilot Panel (Investigasi SOP & Analisis Kaidah BPMN) */}
-        <aside className={`detail-panel${detailOpen ? '' : ' detail-panel--collapsed'}`}>
+        <aside id="copilot-panel" className={`detail-panel${detailOpen ? '' : ' detail-panel--collapsed'}`} data-motion-item>
           {hasCopilotContext ? (
             <Suspense
               fallback={
@@ -885,42 +1035,50 @@ export default function App() {
         </Suspense>
       )}
       {isLoading && <LoadingState variant="overlay" label={loadingMessage} />}
+      {successMessage && (
+        <div className="success-toast" role="status" aria-live="polite">
+          <span className="success-toast__dot" aria-hidden="true" />
+          {successMessage}
+        </div>
+      )}
     </div>
   );
 
-  // Real Simulation Mode (/demo): normal look
-  if (isRealMode) {
-    return appContent;
+  return appContent;
+}
+
+function AnimatedCount({ value }) {
+  const [displayValue, setDisplayValue] = useState(0);
+  const previousValueRef = useRef(0);
+
+  useEffect(() => {
+    const startValue = previousValueRef.current;
+    previousValueRef.current = value;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setDisplayValue(value);
+      return undefined;
+    }
+
+    const startTime = performance.now();
+    let frameId;
+    const animate = (now) => {
+      const progress = Math.min((now - startTime) / 600, 1);
+      setDisplayValue(Math.round(startValue + (value - startValue) * progress));
+      if (progress < 1) frameId = window.requestAnimationFrame(animate);
+    };
+    frameId = window.requestAnimationFrame(animate);
+    return () => window.cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return displayValue;
+}
+
+function readSavedTheme() {
+  try {
+    const savedTheme = window.localStorage.getItem('autobpmn-theme');
+    return savedTheme === 'light' ? 'light' : 'dark';
+  } catch (error) {
+    console.warn('Unable to read saved theme preference:', error);
+    return 'dark';
   }
-
-  // Simulation Mode (Root /): wrap with outer border & banner
-  return (
-    <div className="simulation-outer-frame">
-      <div className="simulation-border-box">
-        <div className="simulation-banner">
-          <div className="simulation-banner__left">
-            <span className="simulation-badge">Simulation Only</span>
-            <span className="simulation-banner__text">
-              Mode simulasi lokal (Fake API). Menampilkan hasil seolah API telah merespons.
-            </span>
-          </div>
-          <button
-            type="button"
-            className="simulation-banner__action"
-            onClick={() => switchMode(true)}
-            title="Buka live prototype dengan pemanggilan API nyata di /demo"
-          >
-            <span>Klik di sini untuk prototype asli</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-              <path d="M5 12h14" />
-              <path d="m12 5 7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-        <div className="simulation-inner-app">
-          {appContent}
-        </div>
-      </div>
-    </div>
-  );
 }
